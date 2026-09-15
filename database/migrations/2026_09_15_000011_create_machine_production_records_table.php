@@ -20,7 +20,10 @@ return new class extends Migration
             $table->timestamps();
 
             $table->foreign('machine_id')->references('id')->on('machines')->cascadeOnDelete();
-            $table->index(['machine_id', 'period_start', 'period_end']);
+            $table->index(
+                ['machine_id', 'period_start', 'period_end'],
+                'mpr_machine_period_idx'
+            );
         });
     }
 
