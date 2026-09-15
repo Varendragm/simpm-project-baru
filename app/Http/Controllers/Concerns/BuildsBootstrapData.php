@@ -3,12 +3,13 @@
 namespace App\Http\Controllers\Concerns;
 
 use App\Models\Machine;
-use App\Models\MachinePerformance;
 use App\Models\MaintenanceHistory;
 use App\Models\PmSchedule;
 use App\Models\Station;
 use App\Models\User;
 use App\Models\ValidationHistory;
+use App\Services\PerformanceCalculator;
+use Carbon\Carbon;
 
 trait BuildsBootstrapData
 {
@@ -17,9 +18,10 @@ trait BuildsBootstrapData
         $stations = Station::orderBy('name')->get()->map->toBootstrapArray()->values();
         $machines = Machine::orderBy('code')->get()->map->toBootstrapArray()->values();
 
+        $calculator = app(PerformanceCalculator::class);
         $machinePerformance = [];
-        foreach (MachinePerformance::all() as $perf) {
-            $machinePerformance[$perf->machine_id] = $perf->toBootstrapArray();
+        foreach (Machine::with('productionRecords')->get() as $machine) {
+            $machinePerformance[$machine->id] = $calculator->calculate($machine);
         }
 
         $pmSchedules = PmSchedule::orderBy('tanggal')->get()->map->toBootstrapArray()->values();
@@ -28,8 +30,6 @@ trait BuildsBootstrapData
 
         $users = [];
         foreach (User::whereIn('role', ['supervisor', 'teknisi', 'manajer'])->get() as $u) {
-            // Jika ada beberapa user dengan role sama, ambil yang pertama (role dipakai sebagai kunci
-            // seperti pada mockup asli — satu akun demo per peran).
             if (!isset($users[$u->role])) {
                 $users[$u->role] = $u->toBootstrapArray();
             }
