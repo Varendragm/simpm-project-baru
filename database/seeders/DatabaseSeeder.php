@@ -10,6 +10,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             SimpmSeeder::class,
+            PerformanceDataSeeder::class,
         ]);
     }
 }
