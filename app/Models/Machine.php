@@ -27,6 +27,11 @@ class Machine extends Model
         return $this->hasOne(MachinePerformance::class);
     }
 
+    public function productionRecords(): HasMany
+    {
+        return $this->hasMany(MachineProductionRecord::class);
+    }
+
     public function pmSchedules(): HasMany
     {
         return $this->hasMany(PmSchedule::class);
