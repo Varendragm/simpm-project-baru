@@ -1,0 +1,54 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class Machine extends Model
+{
+    public $incrementing = false;
+    protected $keyType = 'string';
+
+    protected $fillable = [
+        'id', 'station_id', 'code', 'name', 'type', 'status',
+        'capacity', 'year', 'notes',
+    ];
+
+    public function station(): BelongsTo
+    {
+        return $this->belongsTo(Station::class);
+    }
+
+    public function performance(): HasOne
+    {
+        return $this->hasOne(MachinePerformance::class);
+    }
+
+    public function pmSchedules(): HasMany
+    {
+        return $this->hasMany(PmSchedule::class);
+    }
+
+    public function maintenanceHistories(): HasMany
+    {
+        return $this->hasMany(MaintenanceHistory::class);
+    }
+
+    public function toBootstrapArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'stationId' => $this->station_id,
+            'code' => $this->code,
+            'name' => $this->name,
+            'type' => $this->type,
+            'status' => $this->status,
+            'capacity' => $this->capacity,
+            'year' => $this->year,
+            'notes' => $this->notes,
+        ];
+    }
+}
