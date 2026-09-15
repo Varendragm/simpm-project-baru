@@ -11,8 +11,23 @@ class PerformanceCalculator
 {
     public function calculate(Machine $machine, ?Carbon $start = null, ?Carbon $end = null): array
     {
-        $start ??= now()->startOfMonth();
-        $end ??= now()->endOfMonth();
+        // Use the latest available production period by default so demo/seed data is
+        // calculated even when the machine data is older than today's month.
+        if ($start === null && $end === null) {
+            $latest = MachineProductionRecord::where('machine_id', $machine->id)
+                ->orderByDesc('period_end')
+                ->first();
+            if ($latest) {
+                $start = Carbon::parse($latest->period_start)->startOfMonth();
+                $end = Carbon::parse($latest->period_end)->endOfMonth();
+            } else {
+                $start = now()->startOfMonth();
+                $end = now()->endOfMonth();
+            }
+        } else {
+            $start ??= $end->copy()->startOfMonth();
+            $end ??= $start->copy()->endOfMonth();
+        }
 
         $maintenance = MaintenanceHistory::query()
             ->where('machine_id', $machine->id)
@@ -41,7 +56,6 @@ class PerformanceCalculator
         $idealOutput = (float) $production->sum('ideal_output');
         $goodOutput = (float) $production->sum('good_output');
 
-        // OEE requires production inputs. Keep the value null instead of inventing it.
         $availability = $plannedMinutes > 0
             ? $this->percent(max(0, $plannedMinutes - $downtime), $plannedMinutes)
             : null;
