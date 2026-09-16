@@ -9,16 +9,7 @@ use App\Http\Controllers\AppController;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| Halaman
-|--------------------------------------------------------------------------
-*/
-
-Route::get('/', function () {
-    return redirect()->to(auth()->check() ? '/app' : '/login');
-});
-
+Route::get('/', fn () => redirect()->to(auth()->check() ? '/app' : '/login'));
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -26,20 +17,23 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/app', [AppController::class, 'index'])->name('app.index');
 
-    /*
-    |----------------------------------------------------------------------
-    | API (session + CSRF, dipanggil dari public/js/app.js)
-    |----------------------------------------------------------------------
-    */
     Route::prefix('api')->group(function () {
         Route::get('/bootstrap', BootstrapController::class);
 
-        Route::post('/stations', [StationController::class, 'store']);
-        Route::post('/machines', [MachineController::class, 'store']);
+        Route::middleware('role:supervisor')->group(function () {
+            Route::post('/stations', [StationController::class, 'store']);
+            Route::put('/stations/{station}', [StationController::class, 'update']);
+            Route::delete('/stations/{station}', [StationController::class, 'destroy']);
+            Route::post('/machines', [MachineController::class, 'store']);
+            Route::put('/machines/{machine}', [MachineController::class, 'update']);
+            Route::delete('/machines/{machine}', [MachineController::class, 'destroy']);
+            Route::post('/pm-schedules', [PmScheduleController::class, 'store']);
+            Route::post('/pm-schedules/{pmSchedule}/validasi', [PmScheduleController::class, 'validasi']);
+        });
 
-        Route::post('/pm-schedules', [PmScheduleController::class, 'store']);
-        Route::post('/pm-schedules/{pmSchedule}/laporan', [PmScheduleController::class, 'submitLaporan']);
-        Route::post('/pm-schedules/{pmSchedule}/validasi', [PmScheduleController::class, 'validasi']);
+        Route::middleware('role:teknisi')->group(function () {
+            Route::post('/pm-schedules/{pmSchedule}/laporan', [PmScheduleController::class, 'submitLaporan']);
+        });
 
         Route::post('/profile/password', [ProfileController::class, 'updatePassword']);
     });
