@@ -49,5 +49,6 @@
   window.__SIMPM_BOOTSTRAP__ = @json($bootstrap);
 </script>
 <script src="{{ asset('js/app.js') }}"></script>
+<script src="{{ asset('js/master-crud.js') }}"></script>
 </body>
 </html>
