@@ -50,6 +50,7 @@
 </script>
 <script src="{{ asset('js/app.js') }}"></script>
 <script src="{{ asset('js/master-crud.js') }}"></script>
+<script src="{{ asset('js/pm-crud.js') }}"></script>
 <script src="{{ asset('js/role-guard.js') }}"></script>
 </body>
 </html>
