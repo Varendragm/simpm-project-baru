@@ -48,6 +48,8 @@ trait BuildsBootstrapData
             }
         }
 
+        $currentUser = auth()->user();
+
         return [
             'stations' => $stations,
             'machines' => $machines->values(),
@@ -56,7 +58,8 @@ trait BuildsBootstrapData
             'validationHistory' => $validationHistory,
             'maintenanceHistory' => $maintenanceHistory,
             'users' => $users,
-            'currentRole' => auth()->check() ? auth()->user()->role : 'supervisor',
+            'currentUser' => $currentUser ? $currentUser->toBootstrapArray() : null,
+            'currentRole' => $currentUser?->role ?? 'supervisor',
         ];
     }
 }
