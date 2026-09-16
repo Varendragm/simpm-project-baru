@@ -29,7 +29,10 @@
                 <div class="field"><label>Nama Mesin</label><input type="text" id="fMesinNama" placeholder="cth. Gilingan 05" required></div>
                 <div class="field"><label>Jenis Mesin</label><input type="text" id="fMesinJenis" placeholder="cth. Unit Gilingan Tebu"></div>
                 <div class="field"><label>Status</label>
-                  <select id="fMesinStatus"><option value="normal">Normal</option><option value="perhatian">Perlu Perhatian</option><option value="perbaikan">Dalam Perbaikan</option></select>
+                  <select id="fMesinStatus"><option value="aktif">Aktif</option><option value="nonaktif">Nonaktif</option></select>
+                </div>
+                <div class="field"><label>Kondisi</label>
+                  <input type="text" value="Otomatis dari data performa" disabled>
                 </div>
                 <div class="field"><label>Kapasitas</label><input type="text" id="fMesinKapasitas" placeholder="cth. 120 TCD"></div>
                 <div class="field"><label>Tahun Pemasangan</label><input type="text" id="fMesinTahun" placeholder="cth. 2010"></div>
