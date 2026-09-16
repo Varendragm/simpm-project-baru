@@ -1,8 +1,8 @@
 /* =====================================================================
    MASTER CRUD — Stasiun & Mesin
    ---------------------------------------------------------------------
-   Lapisan ini menyambungkan UI mockup yang sudah ada ke endpoint Laravel.
-   Tampilan tidak diubah; data disimpan melalui API lalu bootstrap dimuat ulang.
+   UI tetap mengikuti mockup. Status mesin adalah status master manual,
+   sedangkan kondisi mesin berasal dari perhitungan performa otomatis.
    ===================================================================== */
 (function () {
   function handleApiError(prefix, err) {
@@ -89,6 +89,12 @@
       .catch(function (err) { handleApiError('Gagal menghapus mesin', err); });
   };
 
+  function conditionMeta(kondisi) {
+    if (kondisi === 'normal') return { badgeClass: 'badge b-green', label: 'Normal' };
+    if (kondisi === 'perbaikan') return { badgeClass: 'badge b-red', label: 'Dalam Perbaikan' };
+    return { badgeClass: 'badge b-yellow', label: 'Perlu Perhatian' };
+  }
+
   window.renderMasterStasiunMesin = function () {
     const totalStEl = document.getElementById('masterTotalStasiun');
     const totalMsEl = document.getElementById('masterTotalMesin');
@@ -110,14 +116,17 @@
         : '<span class="badge b-gray">Nonaktif</span>';
 
       const rows = machines.length ? machines.map(function (m) {
-        const meta = statusMeta(m.status);
+        const condition = conditionMeta(m.kondisi);
+        const status = m.status === 'aktif'
+          ? '<span class="badge b-green">Aktif</span>'
+          : '<span class="badge b-gray">Nonaktif</span>';
         return '<tr>'
           + '<td class="mono">' + escapeHtml(m.code) + '</td>'
           + '<td><strong>' + escapeHtml(m.name) + '</strong></td>'
           + '<td>' + escapeHtml(m.type || '-') + '</td>'
           + '<td class="mono">' + escapeHtml(m.capacity || '-') + '</td>'
           + '<td class="mono">' + escapeHtml(m.year || '-') + '</td>'
-          + '<td><span class="' + meta.badgeClass + '">' + meta.label + '</span></td>'
+          + '<td>' + status + ' ' + '<span class="' + condition.badgeClass + '">' + condition.label + '</span></td>'
           + '<td style="white-space:nowrap;">'
           + '<button class="btn btn-outline btn-sm" onclick="openModal(\'edit\',\'machine\',\'' + m.id + '\')">Edit</button> '
           + '<button class="btn btn-outline btn-sm" onclick="openDetailMesin(\'' + m.id + '\')">Detail</button> '
@@ -140,7 +149,7 @@
           + '</div>'
         + '</div>'
         + (st.description ? '<div class="station-block-desc">' + escapeHtml(st.description) + '</div>' : '')
-        + '<div class="station-block-body"><div class="table-scroll"><table><thead><tr><th>Kode</th><th>Nama Mesin</th><th>Jenis</th><th>Kapasitas</th><th>Tahun</th><th>Status</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div></div>'
+        + '<div class="station-block-body"><div class="table-scroll"><table><thead><tr><th>Kode</th><th>Nama Mesin</th><th>Jenis</th><th>Kapasitas</th><th>Tahun</th><th>Status / Kondisi</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div></div>'
       + '</div>';
     }).join('');
   };
