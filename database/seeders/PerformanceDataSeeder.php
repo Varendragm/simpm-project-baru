@@ -10,6 +10,10 @@ class PerformanceDataSeeder extends Seeder
 {
     public function run(): void
     {
+        // Demo master status is manual and starts as active.
+        // Operational condition is calculated by MachineStatusCalculator.
+        Machine::query()->update(['status' => 'aktif']);
+
         // Dummy production data for the last 6 months.
         // The application calculates Availability, Performance, Quality,
         // OEE, MTTR, MTBF and Reliability from these inputs plus maintenance data.
