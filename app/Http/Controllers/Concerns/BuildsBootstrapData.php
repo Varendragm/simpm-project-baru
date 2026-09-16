@@ -10,7 +10,6 @@ use App\Models\User;
 use App\Models\ValidationHistory;
 use App\Services\MachineStatusCalculator;
 use App\Services\PerformanceCalculator;
-use Carbon\Carbon;
 
 trait BuildsBootstrapData
 {
@@ -25,15 +24,13 @@ trait BuildsBootstrapData
         $machinePerformance = [];
 
         foreach (Machine::with('productionRecords')->orderBy('code')->get() as $machine) {
-            // Performance is calculated from operational source data.
             $performance = $calculator->calculate($machine);
-
-            // Machine condition is derived automatically from the calculated
-            // performance; the database status field is not the source of truth.
-            $calculatedStatus = $statusCalculator->determine($performance);
+            $calculatedCondition = $statusCalculator->determine($performance);
 
             $machineData = $machine->toBootstrapArray();
-            $machineData['status'] = $calculatedStatus;
+            // status = manual master-data state (aktif/nonaktif)
+            // kondisi = automatic operational condition from performance data
+            $machineData['kondisi'] = $calculatedCondition;
             $machineData['statusReason'] = $statusCalculator->reason($performance);
 
             $machines->push($machineData);
