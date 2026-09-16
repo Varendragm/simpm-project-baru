@@ -8,6 +8,7 @@ use App\Models\PmSchedule;
 use App\Models\Station;
 use App\Models\User;
 use App\Models\ValidationHistory;
+use App\Services\MachineStatusCalculator;
 use App\Services\PerformanceCalculator;
 use Carbon\Carbon;
 
@@ -16,12 +17,27 @@ trait BuildsBootstrapData
     protected function buildBootstrapData(): array
     {
         $stations = Station::orderBy('name')->get()->map->toBootstrapArray()->values();
-        $machines = Machine::orderBy('code')->get()->map->toBootstrapArray()->values();
 
         $calculator = app(PerformanceCalculator::class);
+        $statusCalculator = app(MachineStatusCalculator::class);
+
+        $machines = collect();
         $machinePerformance = [];
-        foreach (Machine::with('productionRecords')->get() as $machine) {
-            $machinePerformance[$machine->id] = $calculator->calculate($machine);
+
+        foreach (Machine::with('productionRecords')->orderBy('code')->get() as $machine) {
+            // Performance is calculated from operational source data.
+            $performance = $calculator->calculate($machine);
+
+            // Machine condition is derived automatically from the calculated
+            // performance; the database status field is not the source of truth.
+            $calculatedStatus = $statusCalculator->determine($performance);
+
+            $machineData = $machine->toBootstrapArray();
+            $machineData['status'] = $calculatedStatus;
+            $machineData['statusReason'] = $statusCalculator->reason($performance);
+
+            $machines->push($machineData);
+            $machinePerformance[$machine->id] = $performance;
         }
 
         $pmSchedules = PmSchedule::orderBy('tanggal')->get()->map->toBootstrapArray()->values();
@@ -37,7 +53,7 @@ trait BuildsBootstrapData
 
         return [
             'stations' => $stations,
-            'machines' => $machines,
+            'machines' => $machines->values(),
             'machinePerformance' => $machinePerformance,
             'pmSchedules' => $pmSchedules,
             'validationHistory' => $validationHistory,
