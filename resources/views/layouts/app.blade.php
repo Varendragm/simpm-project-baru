@@ -41,7 +41,7 @@
       @include('partials.screens.man-performa')
       @include('partials.screens.man-maintenance')
       @include('partials.screens.man-laporan')
-      @include('partials.man-profil')
+      @include('partials.screens.man-profil')
 
 @include('partials.modal-master')
 
