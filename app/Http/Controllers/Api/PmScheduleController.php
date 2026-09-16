@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\MaintenanceHistory;
 use App\Models\PmSchedule;
+use App\Models\User;
 use App\Models\ValidationHistory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -19,6 +20,7 @@ class PmScheduleController extends Controller
             'machineId' => ['required', 'string', 'exists:machines,id'],
             'jenis' => ['required', 'string', 'max:150'],
             'teknisi' => ['nullable', 'string', 'max:150'],
+            'teknisiUserId' => ['nullable', 'integer', 'exists:users,id'],
             'tanggal' => ['required', 'date'],
             'interval' => ['nullable', 'string', 'max:30'],
             'estimasi' => ['nullable', 'string', 'max:30'],
@@ -26,11 +28,22 @@ class PmScheduleController extends Controller
             'catatan' => ['nullable', 'string'],
         ]);
 
+        $technician = null;
+        if (!empty($data['teknisiUserId'])) {
+            $technician = User::whereKey($data['teknisiUserId'])->where('role', 'teknisi')->first();
+            if (!$technician) {
+                return response()->json(['message' => 'Teknisi yang dipilih tidak valid.'], 422);
+            }
+        } elseif (!empty($data['teknisi'])) {
+            $technician = User::where('role', 'teknisi')->where('name', $data['teknisi'])->first();
+        }
+
         $schedule = PmSchedule::create([
             'id' => $data['id'],
             'machine_id' => $data['machineId'],
+            'teknisi_user_id' => $technician?->id,
             'jenis' => $data['jenis'],
-            'teknisi' => $data['teknisi'] ?? '',
+            'teknisi' => $technician?->name ?? ($data['teknisi'] ?? ''),
             'tanggal' => $data['tanggal'],
             'interval' => $data['interval'] ?? null,
             'estimasi' => $data['estimasi'] ?? null,
@@ -46,6 +59,10 @@ class PmScheduleController extends Controller
     {
         if ($pmSchedule->status === 'selesai') {
             return response()->json(['message' => 'Jadwal ini sudah selesai divalidasi.'], 422);
+        }
+
+        if ($pmSchedule->teknisi_user_id && $pmSchedule->teknisi_user_id !== auth()->id()) {
+            return response()->json(['message' => 'Jadwal ini bukan ditugaskan kepada akun Teknisi yang sedang login.'], 403);
         }
 
         $report = $request->validate([
@@ -67,6 +84,7 @@ class PmScheduleController extends Controller
 
         $report['tanggalPemeriksaan'] = $report['tanggalPemeriksaan'] ?? Carbon::today()->toDateString();
         $report['dikirim'] = $report['dikirim'] ?? Carbon::today()->toDateString();
+        $report['pemeriksa'] = auth()->user()->name;
         $report['status'] = 'menunggu';
         $report['catatanSupervisor'] = '';
 
