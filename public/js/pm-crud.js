@@ -99,13 +99,16 @@
     const btn = document.getElementById('tekSubmitBtn');
     if (btn && btn.disabled) return;
 
-    if (!window.currentTeknisiPmId) {
+    // app.js menyimpan state ini sebagai global lexical variable (let),
+    // bukan property window. Mengakses window.currentTeknisiPmId membuat
+    // nilainya selalu undefined walaupun detail jadwal sudah terbuka.
+    if (typeof currentTeknisiPmId === 'undefined' || !currentTeknisiPmId) {
       alert('Jadwal pemeriksaan tidak ditemukan.');
       return;
     }
 
     const report = buildReportFromForm();
-    const pmId = window.currentTeknisiPmId;
+    const pmId = currentTeknisiPmId;
 
     apiFetch('/api/pm-schedules/' + encodeURIComponent(pmId) + '/laporan', {
       method: 'POST',
@@ -134,14 +137,14 @@
   };
 
   window.finalizeValidation = function () {
-    if (!window.currentValidasiPmId) {
+    if (typeof currentValidasiPmId === 'undefined' || !currentValidasiPmId) {
       go('sup2-validasi');
       return;
     }
 
     const approve = document.getElementById('voptApprove').classList.contains('on');
     const catatan = document.getElementById('vdCatatanSupervisor').value.trim();
-    const pmId = window.currentValidasiPmId;
+    const pmId = currentValidasiPmId;
 
     apiFetch('/api/pm-schedules/' + encodeURIComponent(pmId) + '/validasi', {
       method: 'POST',
