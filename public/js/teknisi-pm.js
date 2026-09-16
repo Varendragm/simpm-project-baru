@@ -14,12 +14,11 @@
     if (schedule.teknisiUserId !== null && schedule.teknisiUserId !== undefined) {
       return String(schedule.teknisiUserId) === String(user.id);
     }
-    // Backward compatibility for old rows created before teknisi_user_id existed.
     return schedule.teknisi === user.name;
   }
 
   function mySchedules() {
-    return (window.PM_SCHEDULES || []).filter(isMine);
+    return PM_SCHEDULES.filter(isMine);
   }
 
   window.renderTeknisiDashboard = function () {
@@ -28,9 +27,9 @@
     const name = user ? user.name : '-';
 
     setText('tekStatMingguIni', mine.filter(function (p) { return p.status !== 'selesai'; }).length);
-    setText('tekStatJatuhTempo', mine.filter(function (p) { return p.tanggal === window.DEMO_TODAY && p.status !== 'selesai'; }).length);
+    setText('tekStatJatuhTempo', mine.filter(function (p) { return p.tanggal === DEMO_TODAY && p.status !== 'selesai'; }).length);
     const selesaiBulanIni = mine.filter(function (p) { return p.status === 'selesai'; }).length
-      + (window.MAINTENANCE_HISTORY || []).filter(function (h) { return h.pelaksana === name; }).length;
+      + MAINTENANCE_HISTORY.filter(function (h) { return h.pelaksana === name; }).length;
     setText('tekStatSelesaiBulan', selesaiBulanIni);
 
     const tbody = document.getElementById('tekJadwalTbody');
@@ -39,9 +38,9 @@
     tbody.innerHTML = sorted.length ? sorted.map(function (p) {
       const m = getMachine(p.machineId);
       let displayMeta = PM_STATUS_META[p.status] || PM_STATUS_META.terjadwal;
-      if (p.status === 'terjadwal' && p.tanggal === window.DEMO_TODAY) displayMeta = { label: 'Jatuh Tempo Hari Ini', badgeClass: 'badge b-amber' };
+      if (p.status === 'terjadwal' && p.tanggal === DEMO_TODAY) displayMeta = { label: 'Jatuh Tempo Hari Ini', badgeClass: 'badge b-amber' };
       const btnLabel = p.status === 'terjadwal' ? 'Buka' : 'Lihat';
-      const btnClass = (p.status === 'terjadwal' && p.tanggal === window.DEMO_TODAY) ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm';
+      const btnClass = (p.status === 'terjadwal' && p.tanggal === DEMO_TODAY) ? 'btn btn-primary btn-sm' : 'btn btn-outline btn-sm';
       return '<tr><td><strong>' + escapeHtml(machineLabel(m)) + '</strong></td><td>' + escapeHtml(p.jenis) + '</td><td class="mono">' + formatTanggalID(p.tanggal) + '</td><td><span class="' + displayMeta.badgeClass + '">' + displayMeta.label + '</span></td><td><button class="' + btnClass + '" onclick="openTeknisiDetail(\'' + p.id + '\')">' + btnLabel + '</button></td></tr>';
     }).join('') : '<tr><td colspan="5" class="empty-state">Tidak ada jadwal maintenance ditugaskan ke akun Anda.</td></tr>';
   };
@@ -55,12 +54,12 @@
       let evts = '';
       mine.filter(function (p) { return p.tanggal === iso; }).forEach(function (p) {
         const m = getMachine(p.machineId);
-        const cls = p.status === 'selesai' ? 'done' : (iso === window.DEMO_TODAY ? 'due' : '');
+        const cls = p.status === 'selesai' ? 'done' : (iso === DEMO_TODAY ? 'due' : '');
         const label = p.status === 'selesai' ? 'Selesai' : p.jenis.split(' ').slice(0, 2).join(' ');
         evts += '<div class="cal-evt ' + cls + '" onclick="openTeknisiDetail(\'' + p.id + '\')">' + escapeHtml(machineLabel(m)) + ' · ' + escapeHtml(label) + '</div>';
       });
       const name = me() ? me().name : '';
-      (window.MAINTENANCE_HISTORY || []).filter(function (h) { return h.pelaksana === name && h.tanggal === iso; }).forEach(function (h) {
+      MAINTENANCE_HISTORY.filter(function (h) { return h.pelaksana === name && h.tanggal === iso; }).forEach(function (h) {
         const m = getMachine(h.machineId);
         evts += '<div class="cal-evt done" onclick="go(\'tek2-riwayat\')">' + escapeHtml(machineLabel(m)) + ' · Selesai</div>';
       });
@@ -74,7 +73,7 @@
     const user = me();
     const tbody = document.getElementById('tekRiwayatTbody');
     if (!tbody) return;
-    const list = (window.MAINTENANCE_HISTORY || []).filter(function (h) {
+    const list = MAINTENANCE_HISTORY.filter(function (h) {
       return user && h.pelaksana === user.name;
     }).slice().sort(function (a, b) { return b.tanggal.localeCompare(a.tanggal); });
     tbody.innerHTML = list.length ? list.map(function (h) {
