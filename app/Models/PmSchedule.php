@@ -11,7 +11,7 @@ class PmSchedule extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'id', 'machine_id', 'jenis', 'teknisi', 'tanggal', 'interval',
+        'id', 'machine_id', 'teknisi_user_id', 'jenis', 'teknisi', 'tanggal', 'interval',
         'estimasi', 'prioritas', 'status', 'catatan', 'report',
     ];
 
@@ -28,11 +28,17 @@ class PmSchedule extends Model
         return $this->belongsTo(Machine::class);
     }
 
+    public function teknisiUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'teknisi_user_id');
+    }
+
     public function toBootstrapArray(): array
     {
         $data = [
             'id' => $this->id,
             'machineId' => $this->machine_id,
+            'teknisiUserId' => $this->teknisi_user_id,
             'jenis' => $this->jenis,
             'teknisi' => $this->teknisi,
             'tanggal' => $this->tanggal->format('Y-m-d'),
