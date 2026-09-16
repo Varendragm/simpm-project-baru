@@ -41,7 +41,7 @@
       @include('partials.screens.man-performa')
       @include('partials.screens.man-maintenance')
       @include('partials.screens.man-laporan')
-      @include('partials.screens.man-profil')
+      @include('partials.man-profil')
 
 @include('partials.modal-master')
 
@@ -51,6 +51,7 @@
 <script src="{{ asset('js/app.js') }}"></script>
 <script src="{{ asset('js/master-crud.js') }}"></script>
 <script src="{{ asset('js/pm-crud.js') }}"></script>
+<script src="{{ asset('js/teknisi-pm.js') }}"></script>
 <script src="{{ asset('js/role-guard.js') }}"></script>
 </body>
 </html>
