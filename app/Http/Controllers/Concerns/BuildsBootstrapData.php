@@ -28,8 +28,6 @@ trait BuildsBootstrapData
             $calculatedCondition = $statusCalculator->determine($performance);
 
             $machineData = $machine->toBootstrapArray();
-            // status = manual master-data state (aktif/nonaktif)
-            // kondisi = automatic operational condition from performance data
             $machineData['kondisi'] = $calculatedCondition;
             $machineData['statusReason'] = $statusCalculator->reason($performance);
 
@@ -37,14 +35,19 @@ trait BuildsBootstrapData
             $machinePerformance[$machine->id] = $performance;
         }
 
-        $pmSchedules = PmSchedule::orderBy('tanggal')->get()->map->toBootstrapArray()->values();
+        $pmSchedules = PmSchedule::with('teknisiUser')->orderBy('tanggal')->get()->map->toBootstrapArray()->values();
         $validationHistory = ValidationHistory::orderByDesc('tanggal')->get()->map->toBootstrapArray()->values();
         $maintenanceHistory = MaintenanceHistory::orderByDesc('tanggal')->get()->map->toBootstrapArray()->values();
 
         $users = [];
-        foreach (User::whereIn('role', ['supervisor', 'teknisi', 'manajer'])->get() as $u) {
+        $technicians = [];
+        foreach (User::whereIn('role', ['supervisor', 'teknisi', 'manajer'])->orderBy('name')->get() as $u) {
+            $userData = $u->toBootstrapArray();
             if (!isset($users[$u->role])) {
-                $users[$u->role] = $u->toBootstrapArray();
+                $users[$u->role] = $userData;
+            }
+            if ($u->role === 'teknisi') {
+                $technicians[] = $userData;
             }
         }
 
@@ -58,6 +61,7 @@ trait BuildsBootstrapData
             'validationHistory' => $validationHistory,
             'maintenanceHistory' => $maintenanceHistory,
             'users' => $users,
+            'technicians' => $technicians,
             'currentUser' => $currentUser ? $currentUser->toBootstrapArray() : null,
             'currentRole' => $currentUser?->role ?? 'supervisor',
         ];
