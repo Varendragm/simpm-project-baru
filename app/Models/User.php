@@ -25,13 +25,13 @@ class User extends Authenticatable
         ];
     }
 
-    /**
-     * Bentuk ringkas dipakai oleh frontend (USERS[role] pada mockup asli).
-     */
     public function toBootstrapArray(): array
     {
         return [
+            'id' => $this->id,
             'name' => $this->name,
+            'username' => $this->username,
+            'role' => $this->role,
             'sub' => $this->sub_label,
             'avatar' => $this->avatar,
         ];
