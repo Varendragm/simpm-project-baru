@@ -41,7 +41,7 @@ class MachineController extends Controller
             'code' => ['required', 'string', 'max:20', Rule::unique('machines', 'code')->ignore($machineId)],
             'name' => ['required', 'string', 'max:150'],
             'type' => ['nullable', 'string', 'max:150'],
-            'status' => ['required', 'string', 'in:normal,perhatian,perbaikan'],
+            'status' => ['required', 'string', 'in:aktif,nonaktif'],
             'capacity' => ['nullable', 'string', 'max:100'],
             'year' => ['nullable', 'string', 'max:10'],
             'notes' => ['nullable', 'string'],
