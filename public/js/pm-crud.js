@@ -1,12 +1,34 @@
 /* =====================================================================
    PREVENTIVE MAINTENANCE — BACKEND BRIDGE
-   Tidak mengubah markup/mockup. Fungsi ini menggantikan optimistic update
-   di app.js agar sumber kebenaran tetap database Laravel.
+   Sumber kebenaran jadwal = database Laravel.
+   Penugasan teknisi menggunakan user ID, bukan nama sebagai identitas.
    ===================================================================== */
 (function () {
-  function safeText(id, value) {
-    const el = document.getElementById(id);
-    if (el) el.textContent = value;
+  function currentUser() {
+    return window.SIMPM_CURRENT_USER || (window.__SIMPM_BOOTSTRAP__ && window.__SIMPM_BOOTSTRAP__.currentUser) || null;
+  }
+
+  function syncCurrentUser(data) {
+    window.SIMPM_CURRENT_USER = data && data.currentUser ? data.currentUser : null;
+  }
+
+  // applyBootstrap sudah dijalankan oleh app.js sebelum bridge ini dimuat.
+  syncCurrentUser(window.__SIMPM_BOOTSTRAP__);
+  const originalApplyBootstrap = window.applyBootstrap;
+  if (typeof originalApplyBootstrap === 'function') {
+    window.applyBootstrap = function (data) {
+      originalApplyBootstrap(data);
+      syncCurrentUser(data);
+    };
+  }
+
+  function technicianFromForm() {
+    const name = (document.getElementById('jtTeknisi')?.value || '').trim();
+    const known = window.USERS && window.USERS.teknisi ? window.USERS.teknisi : null;
+    return {
+      name: name,
+      id: known && known.name === name ? known.id : null
+    };
   }
 
   window.simpanJadwalBaru = function () {
@@ -16,15 +38,26 @@
       return;
     }
 
+    const technician = technicianFromForm();
+    if (!technician.name) {
+      alert('Pilih atau isi teknisi terlebih dahulu.');
+      return;
+    }
+    if (!technician.id) {
+      alert('Teknisi tidak ditemukan sebagai akun pengguna.');
+      return;
+    }
+
     const payload = {
       id: 'pm-' + Date.now(),
       machineId: machineId,
       jenis: document.getElementById('jtJenis').value.trim() || 'Pemeriksaan rutin',
-      teknisi: document.getElementById('jtTeknisi').value.trim(),
+      teknisi: technician.name,
+      teknisiUserId: technician.id,
       tanggal: document.getElementById('jtTanggal').value,
       interval: document.getElementById('jtInterval').value,
       estimasi: document.getElementById('jtDurasi').value.trim() || '-',
-      prioritas: jtPrioritasVal || 'sedang',
+      prioritas: window.jtPrioritasVal || 'sedang',
       catatan: document.getElementById('jtCatatan').value.trim()
     };
 
@@ -47,13 +80,13 @@
     const btn = document.getElementById('tekSubmitBtn');
     if (btn && btn.disabled) return;
 
-    if (!currentTeknisiPmId) {
+    if (!window.currentTeknisiPmId) {
       alert('Jadwal pemeriksaan tidak ditemukan.');
       return;
     }
 
     const report = buildReportFromForm();
-    const pmId = currentTeknisiPmId;
+    const pmId = window.currentTeknisiPmId;
 
     apiFetch('/api/pm-schedules/' + encodeURIComponent(pmId) + '/laporan', {
       method: 'POST',
@@ -82,14 +115,14 @@
   };
 
   window.finalizeValidation = function () {
-    if (!currentValidasiPmId) {
+    if (!window.currentValidasiPmId) {
       go('sup2-validasi');
       return;
     }
 
     const approve = document.getElementById('voptApprove').classList.contains('on');
     const catatan = document.getElementById('vdCatatanSupervisor').value.trim();
-    const pmId = currentValidasiPmId;
+    const pmId = window.currentValidasiPmId;
 
     apiFetch('/api/pm-schedules/' + encodeURIComponent(pmId) + '/validasi', {
       method: 'POST',
