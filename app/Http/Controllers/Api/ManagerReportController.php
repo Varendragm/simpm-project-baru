@@ -36,6 +36,8 @@ class ManagerReportController extends Controller
 
         $rows = $query->get()->map(function (Machine $machine) use ($calculator, $start, $end) {
             $performance = $calculator->calculate($machine, $start->copy(), $end->copy());
+            $hasProductionData = (bool) ($performance['hasProductionData'] ?? false);
+
             return [
                 'machineId' => $machine->id,
                 'machine' => $machine->name,
@@ -48,7 +50,12 @@ class ManagerReportController extends Controller
                 'mttr' => $performance['mttr'],
                 'mtbf' => $performance['mtbf'],
                 'downtime' => $performance['downtimeBulanIni'],
-                'kondisi' => $machine->kondisi,
+                // A performance report must not turn missing observations into
+                // a misleading machine condition. Master condition is retained
+                // only when the selected period has production observations.
+                'kondisi' => $hasProductionData ? $machine->kondisi : 'Belum ada data',
+                'hasProductionData' => $hasProductionData,
+                'hasFailureData' => (bool) ($performance['hasFailureData'] ?? false),
                 'periodStart' => $start->toDateString(),
                 'periodEnd' => $end->toDateString(),
             ];
@@ -58,6 +65,7 @@ class ManagerReportController extends Controller
             'period' => $period,
             'periodStart' => $start->toDateString(),
             'periodEnd' => $end->toDateString(),
+            'hasProductionData' => $rows->contains(fn ($row) => $row['hasProductionData']),
             'rows' => $rows,
         ]);
     }
