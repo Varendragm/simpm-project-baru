@@ -1,7 +1,7 @@
       <section class="screen" id="scr-sup2-laporan">
         <div class="filter-row">
           <select class="fsel" id="lapPeriodeSel">
-            <option value="agu">Periode: Mei – Agustus 2026</option>
+            <option value="agu">Bulan Data Terbaru</option>
             <option value="q3">Kuartal Berjalan</option>
             <option value="th">Tahun Berjalan</option>
           </select>
@@ -26,12 +26,12 @@
         </div>
 
         <div class="panel chart-panel">
-          <div class="panel-head"><div><h3>Downtime per Mesin</h3><div class="sub">Total jam downtime bulan berjalan</div></div></div>
+          <div class="panel-head"><div><h3>Downtime per Mesin</h3><div class="sub">Mengikuti periode dan mesin yang dipilih</div></div></div>
           <div class="panel-body"><div class="chart-mount" id="lapDowntimeChart"></div></div>
         </div>
 
         <div class="panel chart-panel">
-          <div class="panel-head"><div><h3>Tren Downtime</h3><div class="sub">Kumulatif jam downtime, 4 bulan terakhir</div></div></div>
+          <div class="panel-head"><div><h3>Tren Downtime</h3><div class="sub">Ringkasan tren maintenance yang tersedia</div></div></div>
           <div class="panel-body"><div class="chart-mount" id="lapTrenDowntimeChart"></div></div>
         </div>
 
@@ -48,12 +48,19 @@
         </div>
 
         <div class="panel">
-          <div class="panel-head"><h3>Ekspor Laporan</h3></div>
+          <div class="panel-head"><h3>Ekspor Laporan Supervisor</h3><div class="sub">Menggunakan filter yang sedang dipilih</div></div>
           <div class="panel-body">
             <div class="export-box">
-              <div class="export-opt"><div class="eo-ic"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 1.5h5.5L12.5 4.5V14.5H4V1.5Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M9.3 1.6V4.7H12.4" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M5.8 8.2H10.7M5.8 10.4H10.7M5.8 12.6H9" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg></div><div class="eo-title">Laporan PDF</div><div class="eo-sub">Ringkasan performa &amp; grafik siap cetak</div></div>
-              <div class="export-opt"><div class="eo-ic"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2.5" width="12" height="11" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M2 6h12M6.3 2.5v11" stroke="currentColor" stroke-width="1.1"/></svg></div><div class="eo-title">Data Excel</div><div class="eo-sub">Riwayat maintenance mentah untuk analisis lanjutan</div></div>
+              <button type="button" class="export-opt" onclick="printSupervisorReport()">
+                <div class="eo-ic"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 1.5h5.5L12.5 4.5V14.5H4V1.5Z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M9.3 1.6V4.7H12.4" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><path d="M5.8 8.2H10.7M5.8 10.4H10.7M5.8 12.6H9" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg></div>
+                <div class="eo-title">Laporan PDF</div><div class="eo-sub">Laporan A4 landscape dengan KPI dan tabel performa mesin.</div>
+              </button>
+              <button type="button" class="export-opt" onclick="exportSupervisorExcel()">
+                <div class="eo-ic"><svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2.5" width="12" height="11" rx="1" stroke="currentColor" stroke-width="1.2"/><path d="M2 6h12M6.3 2.5v11" stroke="currentColor" stroke-width="1.1"/></svg></div>
+                <div class="eo-title">Unduh Excel</div><div class="eo-sub">Data performa sesuai periode, stasiun, dan mesin yang dipilih.</div>
+              </button>
             </div>
+            <div id="supReportExportStatus" style="display:none;margin-top:12px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface-soft);font-size:13px;color:var(--text-secondary);"></div>
           </div>
         </div>
       </section>
