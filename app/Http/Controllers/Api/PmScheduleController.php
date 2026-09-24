@@ -88,6 +88,7 @@ class PmScheduleController extends Controller
             'waktuMulai' => ['nullable', 'date_format:H:i'],
             'waktuSelesai' => ['nullable', 'date_format:H:i'],
             'parameter' => ['nullable', 'array'],
+            'checklist' => ['nullable', 'array'],
             'deskripsi' => ['nullable', 'string'],
             'tindakan' => ['nullable', 'string'],
             'spareparts' => ['nullable', 'array'],
