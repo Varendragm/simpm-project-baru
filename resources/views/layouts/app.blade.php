@@ -55,5 +55,6 @@
 <script src="{{ asset('js/simpm-hardening.js') }}"></script>
 <script src="{{ asset('js/manager-hardening.js') }}"></script>
 <script src="{{ asset('js/manager-report-fix.js') }}"></script>
+<script src="{{ asset('js/supervisor-report-export.js') }}"></script>
 </body>
 </html>
