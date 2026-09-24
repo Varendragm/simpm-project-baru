@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\BootstrapController;
 use App\Http\Controllers\Api\MachineController;
+use App\Http\Controllers\Api\ManagerReportController;
 use App\Http\Controllers\Api\PmScheduleController;
 use App\Http\Controllers\Api\ProfileController;
 use App\Http\Controllers\Api\StationController;
@@ -21,6 +22,10 @@ Route::middleware('auth')->group(function () {
 
     Route::prefix('api')->group(function () {
         Route::get('/bootstrap', BootstrapController::class);
+
+        Route::middleware(EnsureRole::class . ':manajer,supervisor')->group(function () {
+            Route::get('/manager/report', ManagerReportController::class);
+        });
 
         Route::middleware(EnsureRole::class . ':supervisor')->group(function () {
             Route::post('/stations', [StationController::class, 'store']);
