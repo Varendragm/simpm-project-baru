@@ -53,5 +53,6 @@
 <script src="{{ asset('js/pm-crud.js') }}"></script>
 <script src="{{ asset('js/teknisi-pm.js') }}"></script>
 <script src="{{ asset('js/role-guard.js') }}"></script>
+<script src="{{ asset('js/simpm-hardening.js') }}"></script>
 </body>
 </html>
