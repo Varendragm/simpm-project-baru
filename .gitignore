@@ -6,7 +6,14 @@
 /public/storage
 /storage/*.key
 /storage/pail
+/storage/logs/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/framework/testing/*
 /vendor
+database/database.sqlite
+database/database.sqlite-journal
 .env
 .env.backup
 .env.production
