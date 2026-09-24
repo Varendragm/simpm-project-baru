@@ -28,6 +28,7 @@ trait BuildsBootstrapData
             $calculatedCondition = $statusCalculator->determine($performance);
 
             $machineData = $machine->toBootstrapArray();
+            // status = master state (aktif/nonaktif); kondisi = calculated condition.
             $machineData['kondisi'] = $calculatedCondition;
             $machineData['statusReason'] = $statusCalculator->reason($performance);
 
@@ -40,17 +41,21 @@ trait BuildsBootstrapData
         $maintenanceHistory = MaintenanceHistory::orderByDesc('tanggal')->get()->map->toBootstrapArray()->values();
 
         $users = [];
-        $technicians = [];
+        $usersByRole = [
+            'supervisor' => [],
+            'teknisi' => [],
+            'manajer' => [],
+        ];
+
         foreach (User::whereIn('role', ['supervisor', 'teknisi', 'manajer'])->orderBy('name')->get() as $u) {
             $userData = $u->toBootstrapArray();
             if (!isset($users[$u->role])) {
                 $users[$u->role] = $userData;
             }
-            if ($u->role === 'teknisi') {
-                $technicians[] = $userData;
-            }
+            $usersByRole[$u->role][] = $userData;
         }
 
+        $technicians = $usersByRole['teknisi'];
         $currentUser = auth()->user();
 
         return [
@@ -61,6 +66,7 @@ trait BuildsBootstrapData
             'validationHistory' => $validationHistory,
             'maintenanceHistory' => $maintenanceHistory,
             'users' => $users,
+            'usersByRole' => $usersByRole,
             'technicians' => $technicians,
             'currentUser' => $currentUser ? $currentUser->toBootstrapArray() : null,
             'currentRole' => $currentUser?->role ?? 'supervisor',
