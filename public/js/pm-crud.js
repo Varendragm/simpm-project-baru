@@ -16,7 +16,7 @@
     const technicians = Array.isArray(window.TECHNICIANS) ? window.TECHNICIANS : [];
     [
       document.getElementById('jtTeknisi'),
-      document.getElementById('vdTeknisiBerikutnya')
+      document.getElementById('tdTeknisiTambahan')
     ].forEach(function(select) {
       if (!select) return;
       const previous = select.value;
@@ -227,6 +227,12 @@
       });
   };
 
+  window.togglePekerjaanTambahan = function () {
+    const active = document.getElementById('tdAktif');
+    const detail = document.getElementById('tdDetail');
+    if (detail) detail.style.display = active && active.checked ? 'block' : 'none';
+  };
+
   window.finalizeValidation = function () {
     if (typeof currentValidasiPmId === 'undefined' || !currentValidasiPmId) {
       go('sup2-validasi');
@@ -251,7 +257,19 @@
       method: 'POST',
       body: JSON.stringify({
         approve: approve,
-        catatan: catatan
+        catatan: catatan,
+        pekerjaanTambahan: (function () {
+          const enabled = document.getElementById('tdAktif') && document.getElementById('tdAktif').checked;
+          const tech = document.getElementById('tdTeknisiTambahan');
+          return {
+            enabled: !!enabled,
+            jenis: document.getElementById('tdJenisTambahan') ? document.getElementById('tdJenisTambahan').value.trim() : '',
+            teknisiUserId: tech ? (tech.value || null) : null,
+            tanggal: document.getElementById('tdTanggalTambahan') ? document.getElementById('tdTanggalTambahan').value : '',
+            estimasi: document.getElementById('tdDurasiTambahan') ? document.getElementById('tdDurasiTambahan').value.trim() : '',
+            prioritas: document.getElementById('tdPrioritasTambahan') ? document.getElementById('tdPrioritasTambahan').value : 'sedang'
+          };
+        })()
       })
     })
       .then(function () { return refreshBootstrap(); })
