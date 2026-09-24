@@ -24,9 +24,6 @@ class PerformanceCalculator
 
         $production = $this->productionForPeriod($machine, $start, $end);
 
-        // Only unplanned downtime reduces OEE Availability. Preventive/planned
-        // maintenance remains visible in maintenance history but is not treated
-        // as an unexpected availability loss.
         $unplannedMaintenance = $maintenance->filter(fn ($row) => $this->isUnplanned($row));
         $failureMaintenance = $maintenance->filter(fn ($row) => $this->isFailure($row));
 
@@ -39,6 +36,7 @@ class PerformanceCalculator
         $idealOutput = (float) $production->sum('ideal_output');
         $goodOutput = (float) $production->sum('good_output');
         $operatingMinutes = max(0, $plannedMinutes - $downtimeMinutes);
+        $hasProductionData = $production->isNotEmpty() && $plannedMinutes > 0;
 
         $availability = $plannedMinutes > 0
             ? $this->percent($operatingMinutes, $plannedMinutes)
@@ -56,21 +54,19 @@ class PerformanceCalculator
             ? round(($availability / 100) * ($performance / 100) * ($quality / 100) * 100, 2)
             : null;
 
-        // MTTR = total corrective/breakdown repair time / number of failures.
         $mttr = $failureCount > 0
             ? round($repairMinutes / $failureCount / 60, 2)
             : null;
 
-        // MTBF = operating time / number of failures.
         $mtbf = $failureCount > 0
             ? round($operatingMinutes / $failureCount / 60, 2)
             : null;
 
-        // Reliability at one hour. With no observed failure in the period,
-        // reliability is reported as 100% rather than inventing an MTBF of 0.
-        $reliability = $mtbf !== null && $mtbf > 0
+        // Reliability is only meaningful when there is an observed operating
+        // period. No production observation must not be reported as 100%.
+        $reliability = $hasProductionData && $mtbf !== null && $mtbf > 0
             ? round(exp(-1 / $mtbf) * 100, 2)
-            : ($failureCount === 0 ? 100.0 : null);
+            : ($hasProductionData && $failureCount === 0 ? 100.0 : null);
 
         return [
             'oee' => $oee,
@@ -91,7 +87,7 @@ class PerformanceCalculator
             'actualOutput' => $actualOutput,
             'idealOutput' => $idealOutput,
             'goodOutput' => $goodOutput,
-            'hasProductionData' => $production->isNotEmpty(),
+            'hasProductionData' => $hasProductionData,
             'hasFailureData' => $failureCount > 0,
             'trendOee' => $this->monthlyTrend($machine, $end),
             'periodStart' => $start->toDateString(),
@@ -103,9 +99,6 @@ class PerformanceCalculator
     {
         return MachineProductionRecord::query()
             ->where('machine_id', $machine->id)
-            // A production record must overlap the requested period. Overlap
-            // validation is enforced when records are created; this query only
-            // reads the records that belong to the selected reporting period.
             ->whereDate('period_start', '<=', $end->toDateString())
             ->whereDate('period_end', '>=', $start->toDateString())
             ->orderBy('period_start')
@@ -191,7 +184,6 @@ class PerformanceCalculator
             return $type;
         }
 
-        // Backward-compatible fallback for existing demo records.
         $noLaporan = strtolower((string) ($row->no_laporan ?? ''));
         $text = strtolower(trim(($row->pekerjaan ?? '') . ' ' . ($row->hasil ?? '') . ' ' . ($row->catatan ?? '')));
 
