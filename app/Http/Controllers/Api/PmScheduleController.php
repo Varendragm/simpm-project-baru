@@ -136,6 +136,7 @@ class PmScheduleController extends Controller
             'approve' => ['required', 'boolean'],
             'catatan' => ['nullable', 'string'],
             'teknisiBerikutnya' => ['nullable', 'string', 'max:150'],
+            'teknisiBerikutnyaUserId' => ['nullable', 'integer', 'exists:users,id'],
             'intervalBerikutnya' => ['nullable', 'string', 'max:30'],
             'tanggalBerikutnya' => ['nullable', 'date'],
             'durasiBerikutnya' => ['nullable', 'string', 'max:30'],
@@ -194,24 +195,52 @@ class PmScheduleController extends Controller
                 $nextDate = $data['tanggalBerikutnya'] ?? null;
                 $nextInterval = $data['intervalBerikutnya'] ?? null;
                 if ($nextDate && $nextInterval && $nextInterval !== 'Tidak berulang') {
-                    $nextTechnicianName = $data['teknisiBerikutnya'] ?? $pmSchedule->teknisi;
-                    $nextTechnician = User::where('role', 'teknisi')
-                        ->where('name', $nextTechnicianName)
+                    $nextTechnician = null;
+                    if (!empty($data['teknisiBerikutnyaUserId'])) {
+                        $nextTechnician = User::whereKey($data['teknisiBerikutnyaUserId'])
+                            ->where('role', 'teknisi')
+                            ->first();
+                    }
+                    if (!$nextTechnician) {
+                        $nextTechnicianName = $data['teknisiBerikutnya'] ?? $pmSchedule->teknisi;
+                        $nextTechnician = User::where('role', 'teknisi')
+                            ->where('name', $nextTechnicianName)
+                            ->first();
+                    }
+
+                    $nextTechnicianId = $nextTechnician?->id ?? $pmSchedule->teknisi_user_id;
+                    $nextTechnicianName = $nextTechnician?->name ?? $pmSchedule->teknisi;
+
+                    // Jangan membuat jadwal ganda bila jadwal yang sama sudah ada.
+                    $existingNextSchedule = PmSchedule::query()
+                        ->where('machine_id', $pmSchedule->machine_id)
+                        ->where('jenis', $pmSchedule->jenis)
+                        ->whereDate('tanggal', $nextDate)
+                        ->where('interval', $nextInterval)
+                        ->where(function ($query) use ($nextTechnicianId, $nextTechnicianName) {
+                            if ($nextTechnicianId) {
+                                $query->where('teknisi_user_id', $nextTechnicianId);
+                            } else {
+                                $query->where('teknisi', $nextTechnicianName);
+                            }
+                        })
                         ->first();
 
-                    PmSchedule::create([
-                        'id' => 'pm-' . substr((string) Str::uuid(), 0, 8),
-                        'machine_id' => $pmSchedule->machine_id,
-                        'teknisi_user_id' => $nextTechnician?->id,
-                        'jenis' => $pmSchedule->jenis,
-                        'teknisi' => $nextTechnician?->name ?? $nextTechnicianName,
-                        'tanggal' => $nextDate,
-                        'interval' => $nextInterval,
-                        'estimasi' => $data['durasiBerikutnya'] ?? $pmSchedule->estimasi,
-                        'prioritas' => $pmSchedule->prioritas,
-                        'status' => 'terjadwal',
-                        'catatan' => 'Dijadwalkan otomatis setelah validasi PM ' . $pmSchedule->id,
-                    ]);
+                    if (!$existingNextSchedule) {
+                        PmSchedule::create([
+                            'id' => 'pm-' . substr((string) Str::uuid(), 0, 8),
+                            'machine_id' => $pmSchedule->machine_id,
+                            'teknisi_user_id' => $nextTechnicianId,
+                            'jenis' => $pmSchedule->jenis,
+                            'teknisi' => $nextTechnicianName,
+                            'tanggal' => $nextDate,
+                            'interval' => $nextInterval,
+                            'estimasi' => $data['durasiBerikutnya'] ?? $pmSchedule->estimasi,
+                            'prioritas' => $pmSchedule->prioritas,
+                            'status' => 'terjadwal',
+                            'catatan' => 'Dijadwalkan otomatis setelah validasi PM ' . $pmSchedule->id,
+                        ]);
+                    }
                 }
             }
 
