@@ -74,7 +74,7 @@ class PerformanceCalculatorTest extends TestCase
         $this->assertNull($result['mtbf']);
         $this->assertSame(100.0, $result['reliability']);
         $this->assertSame(90.0, $result['performance']);
-        $this->assertSame(90.0, $result['quality']);
+        $this->assertSame(100.0, $result['quality']);
         $this->assertSame(90.0, $result['oee']);
     }
 
