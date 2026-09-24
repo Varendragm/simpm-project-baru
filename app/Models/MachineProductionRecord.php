@@ -38,6 +38,14 @@ class MachineProductionRecord extends Model
                 ]);
             }
 
+            // Performance reporting is monthly in SIMPM, so one production
+            // record must belong to exactly one calendar month.
+            if ($record->period_start->format('Y-m') !== $record->period_end->format('Y-m')) {
+                throw ValidationException::withMessages([
+                    'period_end' => 'Satu record produksi harus berada dalam bulan yang sama.',
+                ]);
+            }
+
             $query = static::query()
                 ->where('machine_id', $record->machine_id)
                 ->whereDate('period_start', '<=', $record->period_end->toDateString())
