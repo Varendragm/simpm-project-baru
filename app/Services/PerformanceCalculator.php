@@ -10,8 +10,8 @@ use Carbon\Carbon;
 class PerformanceCalculator
 {
     /**
-     * Calculate all performance indicators from dummy/operational source data.
-     * No performance result is hardcoded here.
+     * Calculate OEE and reliability indicators from operational source data.
+     * Performance values are never hardcoded here.
      */
     public function calculate(Machine $machine, ?Carbon $start = null, ?Carbon $end = null): array
     {
@@ -22,23 +22,17 @@ class PerformanceCalculator
             ->whereBetween('tanggal', [$start->toDateString(), $end->toDateString()])
             ->get();
 
-        $production = MachineProductionRecord::query()
-            ->where('machine_id', $machine->id)
-            ->where(function ($q) use ($start, $end) {
-                $q->whereBetween('period_start', [$start->toDateString(), $end->toDateString()])
-                    ->orWhereBetween('period_end', [$start->toDateString(), $end->toDateString()])
-                    ->orWhere(function ($q2) use ($start, $end) {
-                        $q2->where('period_start', '<=', $start->toDateString())
-                            ->where('period_end', '>=', $end->toDateString());
-                    });
-            })
-            ->get();
+        $production = $this->productionForPeriod($machine, $start, $end);
 
-        // ================= SOURCE DATA =================
-        $downtimeMinutes = (float) $maintenance->sum('downtime_menit');
-        $failureCount = $maintenance
-            ->filter(fn ($row) => $this->isFailure($row->kategori, $row->hasil))
-            ->count();
+        // Only unplanned downtime reduces OEE Availability. Preventive/planned
+        // maintenance remains visible in maintenance history but is not treated
+        // as an unexpected availability loss.
+        $unplannedMaintenance = $maintenance->filter(fn ($row) => $this->isUnplanned($row));
+        $failureMaintenance = $maintenance->filter(fn ($row) => $this->isFailure($row));
+
+        $downtimeMinutes = (float) $unplannedMaintenance->sum('downtime_menit');
+        $failureCount = $failureMaintenance->count();
+        $repairMinutes = (float) $failureMaintenance->sum('downtime_menit');
 
         $plannedMinutes = (float) $production->sum('planned_minutes');
         $actualOutput = (float) $production->sum('actual_output');
@@ -46,43 +40,37 @@ class PerformanceCalculator
         $goodOutput = (float) $production->sum('good_output');
         $operatingMinutes = max(0, $plannedMinutes - $downtimeMinutes);
 
-        // ================= OEE =================
-        // Availability = (Planned Time - Downtime) / Planned Time x 100
         $availability = $plannedMinutes > 0
             ? $this->percent($operatingMinutes, $plannedMinutes)
             : null;
 
-        // Performance = Actual Output / Ideal Output x 100
         $performance = $idealOutput > 0
             ? $this->percent($actualOutput, $idealOutput)
             : null;
 
-        // Quality = Good Output / Actual Output x 100
         $quality = $actualOutput > 0
             ? $this->percent($goodOutput, $actualOutput)
             : null;
 
-        // OEE = Availability x Performance x Quality
         $oee = $availability !== null && $performance !== null && $quality !== null
             ? round(($availability / 100) * ($performance / 100) * ($quality / 100) * 100, 2)
             : null;
 
-        // ================= RELIABILITY =================
-        // MTTR = Total Corrective Repair Time / Number of Failures.
-        // Dalam data SIMPM saat ini downtime menjadi dummy repair time.
+        // MTTR = total corrective/breakdown repair time / number of failures.
         $mttr = $failureCount > 0
-            ? round($downtimeMinutes / $failureCount / 60, 2)
-            : 0.0;
+            ? round($repairMinutes / $failureCount / 60, 2)
+            : null;
 
-        // MTBF = Operating Time / Number of Failures.
+        // MTBF = operating time / number of failures.
         $mtbf = $failureCount > 0
             ? round($operatingMinutes / $failureCount / 60, 2)
-            : 0.0;
+            : null;
 
-        // Reliability 1-hour = e^(-1 / MTBF) x 100%.
-        $reliability = $mtbf > 0
+        // Reliability at one hour. With no observed failure in the period,
+        // reliability is reported as 100% rather than inventing an MTBF of 0.
+        $reliability = $mtbf !== null && $mtbf > 0
             ? round(exp(-1 / $mtbf) * 100, 2)
-            : ($failureCount === 0 ? 100.0 : 0.0);
+            : ($failureCount === 0 ? 100.0 : null);
 
         return [
             'oee' => $oee,
@@ -90,6 +78,7 @@ class PerformanceCalculator
             'performance' => $performance,
             'quality' => $quality,
             'reliability' => $reliability,
+            'reliabilityPeriodHours' => 1,
             'mttr' => $mttr,
             'mtbf' => $mtbf,
             'downtimeBulanIni' => round($downtimeMinutes / 60, 2),
@@ -98,14 +87,29 @@ class PerformanceCalculator
             'plannedMinutes' => $plannedMinutes,
             'operatingMinutes' => $operatingMinutes,
             'downtimeMinutes' => $downtimeMinutes,
+            'repairMinutes' => $repairMinutes,
             'actualOutput' => $actualOutput,
             'idealOutput' => $idealOutput,
             'goodOutput' => $goodOutput,
+            'hasProductionData' => $production->isNotEmpty(),
+            'hasFailureData' => $failureCount > 0,
             'trendOee' => $this->monthlyTrend($machine, $end),
             'periodStart' => $start->toDateString(),
             'periodEnd' => $end->toDateString(),
-            'hasProductionData' => $production->isNotEmpty(),
         ];
+    }
+
+    private function productionForPeriod(Machine $machine, Carbon $start, Carbon $end)
+    {
+        return MachineProductionRecord::query()
+            ->where('machine_id', $machine->id)
+            // A production record must overlap the requested period. Overlap
+            // validation is enforced when records are created; this query only
+            // reads the records that belong to the selected reporting period.
+            ->whereDate('period_start', '<=', $end->toDateString())
+            ->whereDate('period_end', '>=', $start->toDateString())
+            ->orderBy('period_start')
+            ->get();
     }
 
     private function resolvePeriod(Machine $machine, ?Carbon $start, ?Carbon $end): array
@@ -153,23 +157,13 @@ class PerformanceCalculator
             ->whereBetween('tanggal', [$start->toDateString(), $end->toDateString()])
             ->get();
 
-        $production = MachineProductionRecord::query()
-            ->where('machine_id', $machine->id)
-            ->where(function ($q) use ($start, $end) {
-                $q->whereBetween('period_start', [$start->toDateString(), $end->toDateString()])
-                    ->orWhereBetween('period_end', [$start->toDateString(), $end->toDateString()])
-                    ->orWhere(function ($q2) use ($start, $end) {
-                        $q2->where('period_start', '<=', $start->toDateString())
-                            ->where('period_end', '>=', $end->toDateString());
-                    });
-            })
-            ->get();
+        $production = $this->productionForPeriod($machine, $start, $end);
 
         $planned = (float) $production->sum('planned_minutes');
         $actual = (float) $production->sum('actual_output');
         $ideal = (float) $production->sum('ideal_output');
         $good = (float) $production->sum('good_output');
-        $downtime = (float) $maintenance->sum('downtime_menit');
+        $downtime = (float) $maintenance->filter(fn ($row) => $this->isUnplanned($row))->sum('downtime_menit');
 
         if ($planned <= 0 || $ideal <= 0 || $actual <= 0) {
             return null;
@@ -190,13 +184,39 @@ class PerformanceCalculator
         return round(min(100, max(0, ($numerator / $denominator) * 100)), 2);
     }
 
-    private function isFailure(?string $category, ?string $result): bool
+    private function maintenanceType($row): string
     {
-        $text = strtolower(trim(($category ?? '') . ' ' . ($result ?? '')));
+        $type = strtolower(trim((string) ($row->jenis_maintenance ?? '')));
+        if (in_array($type, ['preventive', 'corrective', 'breakdown'], true)) {
+            return $type;
+        }
 
-        return str_contains($text, 'kerusakan')
-            || str_contains($text, 'rusak')
-            || str_contains($text, 'gagal')
-            || str_contains($text, 'failure');
+        // Backward-compatible fallback for existing demo records.
+        $noLaporan = strtolower((string) ($row->no_laporan ?? ''));
+        $text = strtolower(trim(($row->pekerjaan ?? '') . ' ' . ($row->hasil ?? '') . ' ' . ($row->catatan ?? '')));
+
+        if (str_starts_with($noLaporan, 'pm-') || str_contains($text, 'preventive')) {
+            return 'preventive';
+        }
+
+        if (str_contains($text, 'breakdown')) {
+            return 'breakdown';
+        }
+
+        if (str_contains($text, 'kerusakan') || str_contains($text, 'rusak') || str_contains($text, 'gagal') || str_contains($text, 'failure') || str_contains($noLaporan, 'br-')) {
+            return 'corrective';
+        }
+
+        return 'preventive';
+    }
+
+    private function isFailure($row): bool
+    {
+        return in_array($this->maintenanceType($row), ['corrective', 'breakdown'], true);
+    }
+
+    private function isUnplanned($row): bool
+    {
+        return in_array($this->maintenanceType($row), ['corrective', 'breakdown'], true);
     }
 }
