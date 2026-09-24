@@ -72,9 +72,54 @@
             <div class="validate-box" style="background:#F5F6F7;">
               <h4>Jadwal PM Berikutnya</h4>
               <p style="margin:0;color:var(--ink-soft);font-size:13px;line-height:1.6;">
-                Jadwal berikutnya dibuat otomatis berdasarkan <strong>interval PM yang sudah ditetapkan saat jadwal dibuat</strong>.
-                Jika interval <strong>Tidak berulang</strong>, sistem tidak membuat jadwal baru.
+                Jadwal PM rutin berikutnya dibuat otomatis berdasarkan <strong>interval PM yang sudah ditetapkan saat jadwal dibuat</strong>.
+                Jika interval <strong>Tidak berulang</strong>, sistem tidak membuat jadwal rutin baru.
               </p>
+            </div>
+
+            <div class="validate-box">
+              <h4>Pekerjaan Tambahan</h4>
+              <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;">
+                <input type="checkbox" id="tdAktif" onchange="togglePekerjaanTambahan()">
+                Buat pekerjaan tambahan satu kali dari temuan pemeriksaan
+              </label>
+
+              <div id="tdDetail" style="display:none;margin-top:14px;">
+                <div class="form-grid">
+                  <div class="field">
+                    <label>Jenis Pekerjaan Tambahan</label>
+                    <input type="text" id="tdJenisTambahan" placeholder="cth. Penggantian baut pengaman">
+                  </div>
+                  <div class="field">
+                    <label>Teknisi</label>
+                    <select id="tdTeknisiTambahan"><option value="">Memuat akun teknisi...</option></select>
+                  </div>
+                  <div class="field">
+                    <label>Tanggal</label>
+                    <input type="date" id="tdTanggalTambahan">
+                  </div>
+                  <div class="field">
+                    <label>Estimasi Durasi</label>
+                    <input type="text" id="tdDurasiTambahan" placeholder="cth. 30 menit">
+                  </div>
+                  <div class="field">
+                    <label>Prioritas</label>
+                    <select id="tdPrioritasTambahan">
+                      <option value="rendah">Rendah</option>
+                      <option value="sedang" selected>Sedang</option>
+                      <option value="tinggi">Tinggi</option>
+                      <option value="kritis">Kritis</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label>Interval</label>
+                    <input type="text" value="Tidak berulang" disabled style="background:#F5F6F7;">
+                  </div>
+                </div>
+                <p style="margin:4px 0 0;color:var(--ink-soft);font-size:12px;">
+                  Pekerjaan ini dibuat sebagai PM terpisah dan hanya dijadwalkan satu kali. PM rutin tetap berjalan sesuai intervalnya.
+                </p>
+              </div>
             </div>
 
             <div class="action-bar">
