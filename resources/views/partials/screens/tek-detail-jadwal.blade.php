@@ -43,6 +43,14 @@
             <div class="downtime-readout">Durasi Downtime Perbaikan (otomatis): <strong id="tekDowntimeVal">—</strong></div>
 
             <!-- Blok parameter teknis spesifik per kategori pekerjaan -->
+            <div class="panel" style="margin-top:18px;background:#FAFAFA;">
+              <div class="panel-head"><h3>Checklist Komponen Pemeriksaan</h3><span class="badge b-blue" id="tekChecklistCount">0/0 diperiksa</span></div>
+              <div class="panel-body" style="padding-top:10px;">
+                <div class="callout" style="margin-bottom:12px;">Teknisi hanya memeriksa komponen sesuai kategori pekerjaan yang dipilih. Semua item checklist harus diberi hasil sebelum laporan dikirim.</div>
+                <div id="tekChecklistMount"></div>
+              </div>
+            </div>
+
             <div class="kat-section" id="tekBlokMekanik">
               <div class="kat-section-head">Parameter Teknis — Mekanik <span class="tag">Kategori aktif</span></div>
               <div class="form-grid">
