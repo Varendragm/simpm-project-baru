@@ -1006,7 +1006,19 @@ function renderValidasiDetail(pmId){
     if(durasiMenit<0) durasiMenit += 24*60;
   }
   document.getElementById('vdWaktu').textContent = (r.waktuMulai||'-')+' – '+(r.waktuSelesai||'-')+' ('+durasiMenit+' menit)';
-  document.getElementById('vdFoto').textContent = '1 foto terlampir';
+  const fotoWrap = document.getElementById('vdFotoPreviewWrap');
+  const fotoImg = document.getElementById('vdFotoPreview');
+  if (r.fotoUrl) {
+    document.getElementById('vdFoto').textContent = 'Foto terlampir';
+    if (fotoImg && fotoWrap) {
+      fotoImg.src = r.fotoUrl;
+      fotoWrap.style.display = 'block';
+    }
+  } else {
+    document.getElementById('vdFoto').textContent = 'Tidak ada foto';
+    if (fotoWrap) fotoWrap.style.display = 'none';
+    if (fotoImg) fotoImg.removeAttribute('src');
+  }
 
   document.getElementById('vdParamMount').innerHTML = renderKatSectionReadonly(r.kategori, r.parameter);
   document.getElementById('vdDeskripsi').value = r.deskripsi || '';
