@@ -13,18 +13,15 @@ class AuthTest extends TestCase
 
     public function test_guest_is_redirected_to_login(): void
     {
-        $response = $this->get('/');
-        $response->assertRedirect('/login');
+        $this->get('/')->assertRedirect('/login');
     }
 
     public function test_login_page_renders(): void
     {
-        $response = $this->get('/login');
-        $response->assertStatus(200);
-        $response->assertSee('Masuk ke SIMPM');
+        $this->get('/login')->assertStatus(200)->assertSee('Masuk ke SIMPM');
     }
 
-    public function test_user_can_login_with_correct_credentials(): void
+    public function test_user_can_login_with_correct_credentials_and_role(): void
     {
         $user = User::create([
             'name' => 'Sri Handayani',
@@ -38,11 +35,31 @@ class AuthTest extends TestCase
         $response = $this->postJson('/login', [
             'username' => 'sri.supervisor',
             'password' => 'password',
+            'role' => 'supervisor',
         ]);
 
-        $response->assertStatus(200);
-        $response->assertJsonPath('user.name', 'Sri Handayani');
+        $response->assertStatus(200)
+            ->assertJsonPath('user.name', 'Sri Handayani')
+            ->assertJsonPath('user.role', 'supervisor');
         $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_login_fails_when_role_does_not_match_account(): void
+    {
+        User::create([
+            'name' => 'Sri Handayani',
+            'username' => 'sri.supervisor',
+            'role' => 'supervisor',
+            'password' => Hash::make('password'),
+        ]);
+
+        $this->postJson('/login', [
+            'username' => 'sri.supervisor',
+            'password' => 'password',
+            'role' => 'teknisi',
+        ])->assertStatus(422);
+
+        $this->assertGuest();
     }
 
     public function test_login_fails_with_wrong_password(): void
@@ -54,12 +71,12 @@ class AuthTest extends TestCase
             'password' => Hash::make('password'),
         ]);
 
-        $response = $this->postJson('/login', [
+        $this->postJson('/login', [
             'username' => 'sri.supervisor',
             'password' => 'salah',
-        ]);
+            'role' => 'supervisor',
+        ])->assertStatus(422);
 
-        $response->assertStatus(422);
         $this->assertGuest();
     }
 
@@ -72,14 +89,11 @@ class AuthTest extends TestCase
             'password' => Hash::make('password'),
         ]);
 
-        $response = $this->actingAs($user)->get('/app');
-        $response->assertStatus(200);
-        $response->assertSee('SIMPM', false);
+        $this->actingAs($user)->get('/app')->assertStatus(200)->assertSee('SIMPM', false);
     }
 
     public function test_guest_cannot_access_app_shell(): void
     {
-        $response = $this->get('/app');
-        $response->assertRedirect('/login');
+        $this->get('/app')->assertRedirect('/login');
     }
 }
