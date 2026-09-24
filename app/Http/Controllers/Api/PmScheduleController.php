@@ -141,6 +141,12 @@ class PmScheduleController extends Controller
             'durasiBerikutnya' => ['nullable', 'string', 'max:30'],
         ]);
 
+        // Validasi hanya boleh dilakukan setelah Teknisi benar-benar mengirim laporan.
+        // Jadwal baru/terjadwal tidak boleh langsung dianggap terkonfirmasi.
+        if ($pmSchedule->status === 'terjadwal') {
+            return response()->json(['message' => 'Jadwal masih terjadwal. Menunggu Teknisi menyelesaikan pemeriksaan dan mengirim laporan.'], 422);
+        }
+
         if (!$pmSchedule->report) {
             return response()->json(['message' => 'Belum ada laporan pemeriksaan untuk jadwal ini.'], 422);
         }
