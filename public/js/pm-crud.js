@@ -206,6 +206,11 @@
           badge.textContent = 'Menunggu Validasi';
           badge.className = 'badge b-purple';
         }
+        const scope = document.getElementById('scr-tek2-detail-jadwal');
+        if (scope) scope.querySelectorAll('input, textarea, select').forEach(function (f) {
+          f.disabled = true;
+          f.style.background = '#F5F6F7';
+        });
         if (typeof renderTechnicianSubmissionCard === 'function') renderTechnicianSubmissionCard();
         if (typeof renderTeknisiDashboard === 'function') renderTeknisiDashboard();
       })
