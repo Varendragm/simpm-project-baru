@@ -952,6 +952,11 @@ function renderValidasiHistory(){
   }).join('') : '<tr><td colspan="7" class="empty-state">Belum ada riwayat validasi.</td></tr>';
 }
 function openValidasiDetail(pmId){
+  const sc = PM_SCHEDULES.find(function(p){ return p.id===pmId; });
+  if(!sc || sc.status !== 'menunggu-validasi' || !sc.report){
+    alert('Jadwal belum dapat divalidasi. Teknisi harus menyelesaikan pemeriksaan dan mengirim laporan terlebih dahulu.');
+    return;
+  }
   currentValidasiPmId = pmId;
   go('sup2-validasi-detail');
 }
@@ -1052,30 +1057,28 @@ function setValidationResult(kind){
 }
 function finalizeValidation(){
   const sc = PM_SCHEDULES.find(function(p){ return p.id===currentValidasiPmId; });
-  if(!sc || !sc.report) { go('sup2-validasi'); return; }
-  const isApprove = document.getElementById('voptApprove').classList.contains('on');
-  const catatan = document.getElementById('vdCatatanSupervisor').value;
-  sc.report.catatanSupervisor = catatan;
-  sc.report.status = isApprove ? 'disetujui' : 'ditolak';
-  sc.status = isApprove ? 'selesai' : 'ditolak';
-  VALIDATION_HISTORY.unshift({
-    machineId: sc.machineId, jenis: sc.jenis, teknisi: sc.report.pemeriksa,
-    divalidasiOleh: USERS.supervisor.name, tanggal: DEMO_TODAY,
-    hasil: isApprove ? 'disetujui' : 'ditolak'
-  });
-  if(isApprove){
-    MAINTENANCE_HISTORY.unshift({
-      noLaporan:'PM-'+sc.id.toUpperCase(), machineId: sc.machineId, kategori: (sc.report.kategori||'').charAt(0).toUpperCase()+(sc.report.kategori||'').slice(1),
-      pekerjaan: sc.jenis, pelaksana: sc.report.pemeriksa,
-      downtimeMenit: (function(){ if(!sc.report.waktuMulai||!sc.report.waktuSelesai) return 0; const a=sc.report.waktuMulai.split(':').map(Number), b=sc.report.waktuSelesai.split(':').map(Number); let d=(b[0]*60+b[1])-(a[0]*60+a[1]); if(d<0) d+=24*60; return d; })(),
-      hasil:'Baik', catatan: catatan, tanggal: DEMO_TODAY
-    });
+  if(!sc || sc.status !== 'menunggu-validasi' || !sc.report) {
+    alert('Laporan belum tersedia untuk divalidasi.');
+    return;
   }
-  go('sup2-validasi');
-  apiFetch('/api/pm-schedules/'+sc.id+'/validasi', {method:'POST', body:JSON.stringify({approve:isApprove, catatan:catatan})})
-    .then(refreshBootstrap)
-    .then(function(){ if(document.getElementById('scr-sup2-validasi').classList.contains('active')){ renderValidasiQueue(); renderValidasiHistory(); } })
-    .catch(function(err){ alert('Gagal menyimpan validasi: '+err); });
+  const isApprove = document.getElementById('voptApprove').classList.contains('on');
+  const catatan = document.getElementById('vdCatatanSupervisor').value.trim();
+  if(!isApprove && !catatan){
+    alert('Berikan catatan Supervisor agar Teknisi mengetahui bagian yang harus diperbaiki.');
+    return;
+  }
+  apiFetch('/api/pm-schedules/'+sc.id+'/validasi', {
+    method:'POST',
+    body:JSON.stringify({approve:isApprove, catatan:catatan})
+  })
+  .then(refreshBootstrap)
+  .then(function(){
+    go('sup2-validasi');
+    renderValidasiQueue();
+    renderValidasiHistory();
+    renderJadwalTable();
+  })
+  .catch(function(err){ alert('Gagal menyimpan validasi: '+err); });
 }
 
 /* =====================================================================
