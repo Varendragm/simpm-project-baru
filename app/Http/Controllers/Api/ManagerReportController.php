@@ -39,6 +39,11 @@ class ManagerReportController extends Controller
         };
 
         $query = Machine::with('station')->orderBy('code');
+
+        if ($request->filled('station_id') && $request->string('station_id')->toString() !== 'all') {
+            $query->where('station_id', $request->string('station_id')->toString());
+        }
+
         if ($request->filled('machine_id') && $request->string('machine_id')->toString() !== 'all') {
             $query->whereKey($request->string('machine_id')->toString());
         }
