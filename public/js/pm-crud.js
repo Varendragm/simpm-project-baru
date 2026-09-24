@@ -251,12 +251,7 @@
       method: 'POST',
       body: JSON.stringify({
         approve: approve,
-        catatan: catatan,
-        teknisiBerikutnyaUserId: document.getElementById('vdTeknisiBerikutnya').value,
-        teknisiBerikutnya: (function(){ const id=document.getElementById('vdTeknisiBerikutnya').value; const u=(window.TECHNICIANS||[]).find(function(x){return String(x.id)===String(id);}); return u ? u.name : ''; })(),
-        intervalBerikutnya: document.getElementById('vdIntervalBerikutnya').value,
-        tanggalBerikutnya: document.getElementById('vdTanggalBerikutnya').value,
-        durasiBerikutnya: document.getElementById('vdDurasiBerikutnya').value
+        catatan: catatan
       })
     })
       .then(function () { return refreshBootstrap(); })
