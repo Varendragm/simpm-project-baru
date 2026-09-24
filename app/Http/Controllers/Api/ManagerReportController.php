@@ -5,12 +5,21 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Machine;
 use App\Services\PerformanceCalculator;
-use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class ManagerReportController extends Controller
 {
     public function __invoke(Request $request, PerformanceCalculator $calculator)
+    {
+        return response()->json($this->buildReport($request, $calculator));
+    }
+
+    public function print(Request $request, PerformanceCalculator $calculator)
+    {
+        return view('manager.report-print', $this->buildReport($request, $calculator));
+    }
+
+    private function buildReport(Request $request, PerformanceCalculator $calculator): array
     {
         $period = $request->string('period')->toString() ?: 'month';
         if (!in_array($period, ['month', 'quarter', 'year'], true)) {
@@ -50,9 +59,6 @@ class ManagerReportController extends Controller
                 'mttr' => $performance['mttr'],
                 'mtbf' => $performance['mtbf'],
                 'downtime' => $performance['downtimeBulanIni'],
-                // A performance report must not turn missing observations into
-                // a misleading machine condition. Master condition is retained
-                // only when the selected period has production observations.
                 'kondisi' => $hasProductionData ? $machine->kondisi : 'Belum ada data',
                 'hasProductionData' => $hasProductionData,
                 'hasFailureData' => (bool) ($performance['hasFailureData'] ?? false),
@@ -61,12 +67,12 @@ class ManagerReportController extends Controller
             ];
         })->values();
 
-        return response()->json([
+        return [
             'period' => $period,
             'periodStart' => $start->toDateString(),
             'periodEnd' => $end->toDateString(),
             'hasProductionData' => $rows->contains(fn ($row) => $row['hasProductionData']),
-            'rows' => $rows,
-        ]);
+            'rows' => $rows->all(),
+        ];
     }
 }
