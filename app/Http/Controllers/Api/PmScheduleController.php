@@ -144,6 +144,25 @@ class PmScheduleController extends Controller
             'pekerjaanTambahan.prioritas' => ['nullable', 'string', 'in:rendah,sedang,tinggi,kritis'],
         ]);
 
+        $additional = $data['pekerjaanTambahan'] ?? [];
+        if (($additional['enabled'] ?? false) === true) {
+            if (!$data['approve']) {
+                return response()->json(['message' => 'Pekerjaan tambahan hanya dapat dibuat setelah laporan PM disetujui.'], 422);
+            }
+
+            if (empty($additional['jenis']) || empty($additional['teknisiUserId']) || empty($additional['tanggal'])) {
+                return response()->json(['message' => 'Lengkapi jenis pekerjaan, teknisi, dan tanggal untuk pekerjaan tambahan.'], 422);
+            }
+
+            $additionalTechnician = User::whereKey($additional['teknisiUserId'])
+                ->where('role', 'teknisi')
+                ->first();
+
+            if (!$additionalTechnician) {
+                return response()->json(['message' => 'Teknisi untuk pekerjaan tambahan tidak valid.'], 422);
+            }
+        }
+
         // Validasi hanya boleh dilakukan setelah Teknisi benar-benar mengirim laporan.
         // Jadwal baru/terjadwal tidak boleh langsung dianggap terkonfirmasi.
         if ($pmSchedule->status === 'terjadwal') {
@@ -237,17 +256,9 @@ class PmScheduleController extends Controller
                 // Pekerjaan ini tidak mengubah/mengganggu PM rutin berikutnya.
                 $additional = $data['pekerjaanTambahan'] ?? [];
                 if (($additional['enabled'] ?? false) === true) {
-                    if (empty($additional['jenis']) || empty($additional['teknisiUserId']) || empty($additional['tanggal'])) {
-                        throw new \RuntimeException('Pekerjaan tambahan harus memiliki jenis pekerjaan, teknisi, dan tanggal.');
-                    }
-
                     $additionalTechnician = User::whereKey($additional['teknisiUserId'])
                         ->where('role', 'teknisi')
                         ->first();
-
-                    if (!$additionalTechnician) {
-                        throw new \RuntimeException('Teknisi untuk pekerjaan tambahan tidak valid.');
-                    }
 
                     $additionalDate = Carbon::parse($additional['tanggal'])->toDateString();
                     $additionalPriority = $additional['prioritas'] ?? 'sedang';
