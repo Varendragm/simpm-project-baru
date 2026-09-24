@@ -1409,6 +1409,81 @@ function renderTeknisiDetailJadwal(pmId){
   }
 }
 
+const PM_CHECKLIST_TEMPLATES = {
+  mekanik: [
+    {key:'bearing', label:'Bearing / bantalan'},
+    {key:'pelumasan', label:'Pelumasan'},
+    {key:'getaran', label:'Getaran dan kondisi dudukan'},
+    {key:'suhu', label:'Suhu bearing / gearbox'},
+    {key:'baut', label:'Baut dan pengencangan'}
+  ],
+  elektrik: [
+    {key:'tegangan', label:'Tegangan suplai'},
+    {key:'arus', label:'Arus motor'},
+    {key:'isolasi', label:'Tahanan isolasi'},
+    {key:'panel', label:'Kontaktor / panel listrik'},
+    {key:'terminal', label:'Terminal dan koneksi kabel'}
+  ],
+  instrumentasi: [
+    {key:'sensor', label:'Kondisi sensor'},
+    {key:'pembacaan', label:'Nilai pembacaan sensor'},
+    {key:'standar', label:'Kesesuaian dengan standar'},
+    {key:'deviasi', label:'Deviasi pengukuran'},
+    {key:'kalibrasi', label:'Status kalibrasi'}
+  ]
+};
+
+function renderTekChecklist(kat, existing) {
+  const mount = document.getElementById('tekChecklistMount');
+  if (!mount) return;
+  const items = PM_CHECKLIST_TEMPLATES[kat] || [];
+  const old = Array.isArray(existing) ? existing : [];
+  mount.innerHTML = items.map(function(item) {
+    const saved = old.find(function(x){ return x.key === item.key; }) || {};
+    const status = saved.status || '';
+    const note = saved.catatan || '';
+    return '<div class="kv" style="padding:10px 0;border-bottom:1px solid var(--line);display:grid;grid-template-columns:minmax(180px,1fr) 180px minmax(180px,1fr);gap:10px;align-items:center;">'
+      + '<span class="v"><strong>' + escapeHtml(item.label) + '</strong></span>'
+      + '<select class="tek-check-status" data-key="' + item.key + '">'
+      + '<option value="">Belum diperiksa</option>'
+      + '<option value="normal"' + (status==='normal'?' selected':'') + '>Normal</option>'
+      + '<option value="perhatian"' + (status==='perhatian'?' selected':'') + '>Perlu Perhatian</option>'
+      + '<option value="abnormal"' + (status==='abnormal'?' selected':'') + '>Abnormal</option>'
+      + '<option value="tidak-tersedia"' + (status==='tidak-tersedia'?' selected':'') + '>Tidak tersedia</option>'
+      + '</select>'
+      + '<input class="tek-check-note" data-key="' + item.key + '" value="' + escapeHtml(note) + '" placeholder="Catatan / nilai">'
+      + '</div>';
+  }).join('');
+  mount.querySelectorAll('.tek-check-status').forEach(function(el){ el.addEventListener('change', updateTekChecklistCount); });
+  updateTekChecklistCount();
+}
+
+function getTekChecklist() {
+  return Array.from(document.querySelectorAll('#tekChecklistMount .tek-check-status')).map(function(el) {
+    const key = el.dataset.key;
+    const item = (PM_CHECKLIST_TEMPLATES[document.querySelector('#tekKategoriRow .vopt.on')?.dataset.kat] || []).find(function(x){ return x.key === key; });
+    const noteEl = document.querySelector('.tek-check-note[data-key="' + key + '"]');
+    return {key:key, label:item ? item.label : key, status:el.value, catatan:noteEl ? noteEl.value.trim() : ''};
+  });
+}
+
+function updateTekChecklistCount() {
+  const els = document.querySelectorAll('#tekChecklistMount .tek-check-status');
+  const done = Array.from(els).filter(function(el){ return el.value; }).length;
+  const badge = document.getElementById('tekChecklistCount');
+  if (badge) badge.textContent = done + '/' + els.length + ' diperiksa';
+}
+
+function validateTekChecklist() {
+  const list = getTekChecklist();
+  const pending = list.filter(function(x){ return !x.status; });
+  if (pending.length) {
+    alert('Checklist belum lengkap. Periksa semua item terlebih dahulu.');
+    return false;
+  }
+  return true;
+}
+
 function setTekKategori(kat, el){
   document.querySelectorAll('#tekKategoriRow .vopt').forEach(function(v){ v.classList.remove('on'); });
   if(el) el.classList.add('on');
@@ -1419,6 +1494,7 @@ function setTekKategori(kat, el){
   const map = {mekanik:'tekBlokMekanik', elektrik:'tekBlokElektrik', instrumentasi:'tekBlokInstrumentasi'};
   const active = document.getElementById(map[kat]);
   if(active) active.style.display = 'block';
+  renderTekChecklist(kat);
 }
 function setTekPrioritas(p, el){
   document.querySelectorAll('#tekPrioritasRow .prio').forEach(function(v){ v.classList.remove('on'); });
@@ -1472,11 +1548,13 @@ function buildReportFromForm(){
       spareparts.push({nama:inputs[0].value, kode:inputs[1].value, qty:inputs[2].value, satuan:inputs[3].value});
     }
   });
+  if (!validateTekChecklist()) return null;
   return {
     tanggalPemeriksaan: DEMO_TODAY, dikirim: DEMO_TODAY, pemeriksa: USERS.teknisi.name,
     kategori: kategori, prioritas: prioritas,
     waktuMulai: document.getElementById('tekWaktuMulai').value, waktuSelesai: document.getElementById('tekWaktuSelesai').value,
     parameter: parameter,
+    checklist: getTekChecklist(),
     deskripsi: document.getElementById('tekDeskripsi').value,
     tindakan: document.getElementById('tekTindakan').value,
     spareparts: spareparts,
