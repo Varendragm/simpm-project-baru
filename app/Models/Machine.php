@@ -17,6 +17,21 @@ class Machine extends Model
         'capacity', 'year', 'notes',
     ];
 
+    protected static function booted(): void
+    {
+        static::saving(function (self $machine) {
+            // Legacy mockup data used condition values in the status column.
+            // Keep the master status binary and let the calculator own condition.
+            if (in_array(strtolower((string) $machine->status), ['normal', 'perhatian', 'perbaikan'], true)) {
+                $machine->status = 'aktif';
+            }
+
+            if (!in_array(strtolower((string) $machine->status), ['aktif', 'nonaktif'], true)) {
+                $machine->status = 'aktif';
+            }
+        });
+    }
+
     public function station(): BelongsTo
     {
         return $this->belongsTo(Station::class);
