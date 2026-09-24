@@ -12,7 +12,6 @@
 <body>
 
 @include('partials.logout-splash')
-
 @include('partials.app-shell')
 
       {{-- ===== SUPERVISOR ===== --}}
@@ -55,5 +54,6 @@
 <script src="{{ asset('js/role-guard.js') }}"></script>
 <script src="{{ asset('js/simpm-hardening.js') }}"></script>
 <script src="{{ asset('js/manager-hardening.js') }}"></script>
+<script src="{{ asset('js/manager-report-fix.js') }}"></script>
 </body>
 </html>
