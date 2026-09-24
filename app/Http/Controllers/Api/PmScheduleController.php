@@ -12,6 +12,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class PmScheduleController extends Controller
 {
@@ -133,6 +134,10 @@ class PmScheduleController extends Controller
         $data = $request->validate([
             'approve' => ['required', 'boolean'],
             'catatan' => ['nullable', 'string'],
+            'teknisiBerikutnya' => ['nullable', 'string', 'max:150'],
+            'intervalBerikutnya' => ['nullable', 'string', 'max:30'],
+            'tanggalBerikutnya' => ['nullable', 'date'],
+            'durasiBerikutnya' => ['nullable', 'string', 'max:30'],
         ]);
 
         if (!$pmSchedule->report) {
@@ -176,6 +181,31 @@ class PmScheduleController extends Controller
                     'catatan' => $data['catatan'] ?? '',
                     'tanggal' => Carbon::parse($report['tanggalPemeriksaan'] ?? Carbon::today())->toDateString(),
                 ]);
+
+                // Jadwal PM berikutnya benar-benar dibuat hanya jika Supervisor
+                // mengisi tanggal dan memilih interval berulang.
+                $nextDate = $data['tanggalBerikutnya'] ?? null;
+                $nextInterval = $data['intervalBerikutnya'] ?? null;
+                if ($nextDate && $nextInterval && $nextInterval !== 'Tidak berulang') {
+                    $nextTechnicianName = $data['teknisiBerikutnya'] ?? $pmSchedule->teknisi;
+                    $nextTechnician = User::where('role', 'teknisi')
+                        ->where('name', $nextTechnicianName)
+                        ->first();
+
+                    PmSchedule::create([
+                        'id' => 'pm-' . substr((string) Str::uuid(), 0, 8),
+                        'machine_id' => $pmSchedule->machine_id,
+                        'teknisi_user_id' => $nextTechnician?->id,
+                        'jenis' => $pmSchedule->jenis,
+                        'teknisi' => $nextTechnician?->name ?? $nextTechnicianName,
+                        'tanggal' => $nextDate,
+                        'interval' => $nextInterval,
+                        'estimasi' => $data['durasiBerikutnya'] ?? $pmSchedule->estimasi,
+                        'prioritas' => $pmSchedule->prioritas,
+                        'status' => 'terjadwal',
+                        'catatan' => 'Dijadwalkan otomatis setelah validasi PM ' . $pmSchedule->id,
+                    ]);
+                }
             }
 
             return $pmSchedule->fresh();
