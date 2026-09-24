@@ -135,11 +135,6 @@ class PmScheduleController extends Controller
         $data = $request->validate([
             'approve' => ['required', 'boolean'],
             'catatan' => ['nullable', 'string'],
-            'teknisiBerikutnya' => ['nullable', 'string', 'max:150'],
-            'teknisiBerikutnyaUserId' => ['nullable', 'integer', 'exists:users,id'],
-            'intervalBerikutnya' => ['nullable', 'string', 'max:30'],
-            'tanggalBerikutnya' => ['nullable', 'date'],
-            'durasiBerikutnya' => ['nullable', 'string', 'max:30'],
         ]);
 
         // Validasi hanya boleh dilakukan setelah Teknisi benar-benar mengirim laporan.
@@ -190,33 +185,21 @@ class PmScheduleController extends Controller
                     'tanggal' => Carbon::parse($report['tanggalPemeriksaan'] ?? Carbon::today())->toDateString(),
                 ]);
 
-                // Jadwal PM berikutnya benar-benar dibuat hanya jika Supervisor
-                // mengisi tanggal dan memilih interval berulang.
-                $nextDate = $data['tanggalBerikutnya'] ?? null;
-                $nextInterval = $data['intervalBerikutnya'] ?? null;
-                if ($nextDate && $nextInterval && $nextInterval !== 'Tidak berulang') {
-                    $nextTechnician = null;
-                    if (!empty($data['teknisiBerikutnyaUserId'])) {
-                        $nextTechnician = User::whereKey($data['teknisiBerikutnyaUserId'])
-                            ->where('role', 'teknisi')
-                            ->first();
-                    }
-                    if (!$nextTechnician) {
-                        $nextTechnicianName = $data['teknisiBerikutnya'] ?? $pmSchedule->teknisi;
-                        $nextTechnician = User::where('role', 'teknisi')
-                            ->where('name', $nextTechnicianName)
-                            ->first();
-                    }
+                // Jadwal PM berikutnya dibuat OTOMATIS berdasarkan interval
+                // yang sudah ditetapkan saat jadwal PM dibuat. Supervisor tidak
+                // perlu memilih interval/tanggal/teknisi lagi saat validasi.
+                $nextDate = $this->calculateNextPmDate($pmSchedule->tanggal, $pmSchedule->interval);
 
-                    $nextTechnicianId = $nextTechnician?->id ?? $pmSchedule->teknisi_user_id;
-                    $nextTechnicianName = $nextTechnician?->name ?? $pmSchedule->teknisi;
+                if ($nextDate) {
+                    $nextTechnicianId = $pmSchedule->teknisi_user_id;
+                    $nextTechnicianName = $pmSchedule->teknisi;
 
                     // Jangan membuat jadwal ganda bila jadwal yang sama sudah ada.
                     $existingNextSchedule = PmSchedule::query()
                         ->where('machine_id', $pmSchedule->machine_id)
                         ->where('jenis', $pmSchedule->jenis)
                         ->whereDate('tanggal', $nextDate)
-                        ->where('interval', $nextInterval)
+                        ->where('interval', $pmSchedule->interval)
                         ->where(function ($query) use ($nextTechnicianId, $nextTechnicianName) {
                             if ($nextTechnicianId) {
                                 $query->where('teknisi_user_id', $nextTechnicianId);
@@ -234,8 +217,8 @@ class PmScheduleController extends Controller
                             'jenis' => $pmSchedule->jenis,
                             'teknisi' => $nextTechnicianName,
                             'tanggal' => $nextDate,
-                            'interval' => $nextInterval,
-                            'estimasi' => $data['durasiBerikutnya'] ?? $pmSchedule->estimasi,
+                            'interval' => $pmSchedule->interval,
+                            'estimasi' => $pmSchedule->estimasi,
                             'prioritas' => $pmSchedule->prioritas,
                             'status' => 'terjadwal',
                             'catatan' => 'Dijadwalkan otomatis setelah validasi PM ' . $pmSchedule->id,
@@ -248,6 +231,25 @@ class PmScheduleController extends Controller
         });
 
         return response()->json($pmSchedule->toBootstrapArray());
+    }
+
+    private function calculateNextPmDate($currentDate, ?string $interval): ?string
+    {
+        if (!$currentDate || !$interval || $interval === 'Tidak berulang') {
+            return null;
+        }
+
+        $date = Carbon::parse($currentDate);
+
+        return match ($interval) {
+            'Harian' => $date->addDay()->toDateString(),
+            'Mingguan' => $date->addWeek()->toDateString(),
+            'Bulanan' => $date->addMonthNoOverflow()->toDateString(),
+            '3 Bulanan' => $date->addMonthsNoOverflow(3)->toDateString(),
+            '6 Bulanan' => $date->addMonthsNoOverflow(6)->toDateString(),
+            'Tahunan' => $date->addYearNoOverflow()->toDateString(),
+            default => null,
+        };
     }
 
     private function calculateDowntime(?string $start, ?string $end): int
