@@ -105,12 +105,14 @@
 
             <div class="form-grid">
               <div class="field">
-                <label>Lampiran Foto</label>
-                <div style="display:flex;align-items:center;gap:8px;height:38px;">
-                  <button type="button" class="btn btn-outline btn-sm">Ambil Foto</button>
-                  <span style="font-size:11px;color:var(--ink-soft);">Belum ada foto</span>
+                <label>Lampiran Foto Pemeriksaan</label>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <input type="file" id="tekFotoInput" accept="image/jpeg,image/png,image/webp" capture="environment" onchange="previewTekFoto(this)" style="max-width:100%;">
+                  <span id="tekFotoLabel" style="font-size:11px;color:var(--ink-soft);">Belum ada foto</span>
                 </div>
-              </div>
+                <div id="tekFotoPreviewWrap" style="display:none;margin-top:10px;">
+                  <img id="tekFotoPreview" src="" alt="Preview foto pemeriksaan" style="display:block;max-width:360px;width:100%;max-height:240px;object-fit:cover;border:1px solid var(--line);border-radius:8px;">
+                </div></div>
               <div class="field"><label>Jadwal PM Berikutnya Disarankan</label><input type="date" id="tekJadwalBerikutnya"></div>
             </div>
             <div class="field">
