@@ -20,6 +20,30 @@ class MaintenanceHistory extends Model
         return ['tanggal' => 'date:Y-m-d'];
     }
 
+    protected static function booted(): void
+    {
+        static::saving(function (self $history) {
+            if (!$history->jenis_maintenance) {
+                $noLaporan = strtolower((string) $history->no_laporan);
+                $text = strtolower(trim(($history->pekerjaan ?? '') . ' ' . ($history->hasil ?? '') . ' ' . ($history->catatan ?? '')));
+
+                if (str_starts_with($noLaporan, 'pm-') || str_contains($text, 'preventive')) {
+                    $history->jenis_maintenance = 'preventive';
+                } elseif (str_contains($text, 'breakdown') || str_contains($text, 'kerusakan') || str_contains($text, 'rusak') || str_contains($text, 'gagal') || str_contains($text, 'failure') || str_contains($noLaporan, 'br-')) {
+                    $history->jenis_maintenance = 'corrective';
+                } else {
+                    $history->jenis_maintenance = 'preventive';
+                }
+            }
+
+            if (!$history->downtime_type) {
+                $history->downtime_type = in_array($history->jenis_maintenance, ['corrective', 'breakdown'], true)
+                    ? 'unplanned'
+                    : 'planned';
+            }
+        });
+    }
+
     public function machine(): BelongsTo
     {
         return $this->belongsTo(Machine::class);
