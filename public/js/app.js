@@ -1043,7 +1043,16 @@ function renderValidasiDetail(pmId){
   document.getElementById('voptReject').classList.remove('on');
   document.getElementById('voptReject').classList.remove('reject');
   document.getElementById('vdCatatanSupervisor').value = r.catatanSupervisor || '';
-  document.getElementById('vdTeknisiBerikutnya').value = r.pemeriksa;
+  const vdTech = document.getElementById('vdTeknisiBerikutnya');
+  const techList = Array.isArray(window.TECHNICIANS) ? window.TECHNICIANS : [];
+  if (vdTech) {
+    vdTech.innerHTML = techList.length
+      ? techList.map(function(u){ return '<option value="' + escapeHtml(String(u.id)) + '">' + escapeHtml(u.name) + '</option>'; }).join('')
+      : '<option value="">Tidak ada akun teknisi</option>';
+    const preferredTech = techList.find(function(u){ return String(u.id) === String(sc.teknisiUserId); })
+      || techList.find(function(u){ return u.name === r.pemeriksa; });
+    if (preferredTech) vdTech.value = String(preferredTech.id);
+  }
   document.getElementById('vdIntervalBerikutnya').value = 'Tidak berulang';
   document.getElementById('vdTanggalBerikutnya').value = r.jadwalBerikutnya || '';
   document.getElementById('vdDurasiBerikutnya').value = sc.estimasi || '';
