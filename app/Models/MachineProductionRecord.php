@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Validation\ValidationException;
 
 class MachineProductionRecord extends Model
 {
@@ -22,6 +23,46 @@ class MachineProductionRecord extends Model
             'ideal_output' => 'float',
             'good_output' => 'float',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $record) {
+            if (!$record->period_start || !$record->period_end) {
+                return;
+            }
+
+            if ($record->period_start->gt($record->period_end)) {
+                throw ValidationException::withMessages([
+                    'period_end' => 'Periode produksi berakhir sebelum tanggal mulai.',
+                ]);
+            }
+
+            $overlap = static::query()
+                ->where('machine_id', $record->machine_id)
+                ->whereKeyNot($record->getKey())
+                ->whereDate('period_start', '<=', $record->period_end->toDateString())
+                ->whereDate('period_end', '>=', $record->period_start->toDateString())
+                ->exists();
+
+            if ($overlap) {
+                throw ValidationException::withMessages([
+                    'period_start' => 'Periode produksi mesin bertabrakan dengan record produksi yang sudah ada.',
+                ]);
+            }
+
+            if ($record->actual_output < 0 || $record->ideal_output < 0 || $record->good_output < 0 || $record->planned_minutes < 0) {
+                throw ValidationException::withMessages([
+                    'production' => 'Nilai produksi dan waktu terencana tidak boleh negatif.',
+                ]);
+            }
+
+            if ($record->good_output > $record->actual_output) {
+                throw ValidationException::withMessages([
+                    'good_output' => 'Good output tidak boleh lebih besar dari actual output.',
+                ]);
+            }
+        });
     }
 
     public function machine(): BelongsTo
