@@ -237,7 +237,14 @@
     const pmId = currentValidasiPmId;
     apiFetch('/api/pm-schedules/' + encodeURIComponent(pmId) + '/validasi', {
       method: 'POST',
-      body: JSON.stringify({ approve: approve, catatan: catatan })
+      body: JSON.stringify({
+        approve: approve,
+        catatan: catatan,
+        teknisiBerikutnya: document.getElementById('vdTeknisiBerikutnya').value,
+        intervalBerikutnya: document.getElementById('vdIntervalBerikutnya').value,
+        tanggalBerikutnya: document.getElementById('vdTanggalBerikutnya').value,
+        durasiBerikutnya: document.getElementById('vdDurasiBerikutnya').value
+      })
     })
       .then(function () { return refreshBootstrap(); })
       .then(function () {
