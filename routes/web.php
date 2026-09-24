@@ -46,4 +46,8 @@ Route::middleware('auth')->group(function () {
 
         Route::post('/profile/password', [ProfileController::class, 'updatePassword']);
     });
+
+    Route::middleware(EnsureRole::class . ':manajer,supervisor')
+        ->get('/manager/report/print', [ManagerReportController::class, 'print'])
+        ->name('manager.report.print');
 });
