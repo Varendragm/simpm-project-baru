@@ -74,7 +74,7 @@
               <div class="form-grid">
                 <div class="field">
                   <label>Teknisi Ditugaskan</label>
-                  <select id="vdTeknisiBerikutnya"><option>Budi Santoso</option><option>Rudi Hartono</option></select>
+                  <select id="vdTeknisiBerikutnya"><option value="">Memuat akun teknisi...</option></select>
                 </div>
                 <div class="field">
                   <label>Interval Pengulangan</label>
