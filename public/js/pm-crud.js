@@ -182,6 +182,7 @@
     }
 
     const report = buildReportFromForm();
+    if (!report) return;
     const pmId = currentTeknisiPmId;
     const fileInput = document.getElementById('tekFotoInput');
     const file = fileInput && fileInput.files ? fileInput.files[0] : null;
