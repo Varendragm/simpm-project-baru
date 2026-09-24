@@ -236,6 +236,11 @@
     }
 
     const pmId = currentValidasiPmId;
+    const pending = PM_SCHEDULES.find(function(p){ return p.id === pmId; });
+    if (!pending || pending.status !== 'menunggu-validasi' || !pending.report) {
+      alert('Laporan Teknisi belum tersedia untuk divalidasi.');
+      return;
+    }
     apiFetch('/api/pm-schedules/' + encodeURIComponent(pmId) + '/validasi', {
       method: 'POST',
       body: JSON.stringify({
