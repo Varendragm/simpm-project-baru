@@ -11,7 +11,8 @@ class MaintenanceHistory extends Model
 
     protected $fillable = [
         'no_laporan', 'machine_id', 'kategori', 'pekerjaan', 'pelaksana',
-        'downtime_menit', 'hasil', 'catatan', 'tanggal',
+        'downtime_menit', 'hasil', 'catatan', 'tanggal', 'jenis_maintenance',
+        'downtime_type',
     ];
 
     protected function casts(): array
@@ -36,6 +37,8 @@ class MaintenanceHistory extends Model
             'hasil' => $this->hasil,
             'catatan' => $this->catatan,
             'tanggal' => $this->tanggal->format('Y-m-d'),
+            'jenisMaintenance' => $this->jenis_maintenance,
+            'downtimeType' => $this->downtime_type,
         ];
     }
 }
