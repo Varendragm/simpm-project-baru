@@ -4,6 +4,7 @@
           <div class="stat-card amber"><div class="stat-num" id="tekStatJatuhTempo">0</div><div class="stat-label">Jatuh Tempo Hari Ini</div></div>
           <div class="stat-card green"><div class="stat-num" id="tekStatSelesaiBulan">0</div><div class="stat-label">PM Selesai Bulan Ini</div></div>
         </div>
+        <div id="tekSubmissionCard" style="display:none;margin-bottom:16px;"></div>
         <div class="panel">
           <div class="panel-head"><h3>Jadwal Maintenance Preventif Saya</h3></div>
           <div class="panel-body" style="padding:0;">
