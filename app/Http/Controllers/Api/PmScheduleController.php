@@ -10,6 +10,8 @@ use App\Models\ValidationHistory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Validator;
 
 class PmScheduleController extends Controller
 {
@@ -65,7 +67,18 @@ class PmScheduleController extends Controller
             return response()->json(['message' => 'Jadwal ini bukan ditugaskan kepada akun Teknisi yang sedang login.'], 403);
         }
 
-        $report = $request->validate([
+        // Mendukung pengiriman JSON lama maupun multipart/form-data untuk lampiran foto.
+        $reportData = $request->input('report');
+        if (is_string($reportData)) {
+            $reportData = json_decode($reportData, true);
+            if (!is_array($reportData)) {
+                return response()->json(['message' => 'Format laporan pemeriksaan tidak valid.'], 422);
+            }
+        } else {
+            $reportData = $request->all();
+        }
+
+        $validator = Validator::make($reportData, [
             'tanggalPemeriksaan' => ['nullable', 'date'],
             'dikirim' => ['nullable', 'date'],
             'pemeriksa' => ['required', 'string', 'max:150'],
@@ -82,11 +95,30 @@ class PmScheduleController extends Controller
             'catatanSupervisor' => ['nullable', 'string'],
         ]);
 
+        if ($validator->fails()) {
+            return response()->json(['message' => $validator->errors()->first(), 'errors' => $validator->errors()], 422);
+        }
+
+        $report = $validator->validated();
         $report['tanggalPemeriksaan'] = $report['tanggalPemeriksaan'] ?? Carbon::today()->toDateString();
-        $report['dikirim'] = $report['dikirim'] ?? Carbon::today()->toDateString();
+        $report['dikirim'] = Carbon::today()->toDateString();
         $report['pemeriksa'] = auth()->user()->name;
         $report['status'] = 'menunggu';
+
+        // Jika laporan ditolak lalu dikirim ulang tanpa foto baru, foto lama tetap dipertahankan.
+        $oldReport = $pmSchedule->report ?? [];
         $report['catatanSupervisor'] = '';
+        if (!empty($oldReport['fotoUrl']) && !$request->hasFile('foto')) {
+            $report['fotoUrl'] = $oldReport['fotoUrl'];
+        }
+
+        if ($request->hasFile('foto')) {
+            $request->validate([
+                'foto' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            ]);
+            $path = $request->file('foto')->store('pm-photos', 'public');
+            $report['fotoUrl'] = Storage::disk('public')->url($path);
+        }
 
         $pmSchedule->update([
             'report' => $report,
