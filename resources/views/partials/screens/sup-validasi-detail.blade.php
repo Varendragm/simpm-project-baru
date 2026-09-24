@@ -69,30 +69,16 @@
               </div>
             </div>
 
-            <div class="validate-box">
-              <h4>Penyesuaian Jadwal PM Berikutnya</h4>
-              <div class="form-grid">
-                <div class="field">
-                  <label>Teknisi Ditugaskan</label>
-                  <select id="vdTeknisiBerikutnya"><option value="">Memuat akun teknisi...</option></select>
-                </div>
-                <div class="field">
-                  <label>Interval Pengulangan</label>
-                  <select id="vdIntervalBerikutnya"><option>Harian</option><option selected>Mingguan</option><option>Bulanan</option><option>Tidak berulang</option></select>
-                </div>
-                <div class="field">
-                  <label>Tanggal Jadwal Berikutnya</label>
-                  <input type="date" id="vdTanggalBerikutnya">
-                </div>
-                <div class="field">
-                  <label>Estimasi Durasi</label>
-                  <input type="text" id="vdDurasiBerikutnya">
-                </div>
-              </div>
+            <div class="validate-box" style="background:#F5F6F7;">
+              <h4>Jadwal PM Berikutnya</h4>
+              <p style="margin:0;color:var(--ink-soft);font-size:13px;line-height:1.6;">
+                Jadwal berikutnya dibuat otomatis berdasarkan <strong>interval PM yang sudah ditetapkan saat jadwal dibuat</strong>.
+                Jika interval <strong>Tidak berulang</strong>, sistem tidak membuat jadwal baru.
+              </p>
             </div>
 
             <div class="action-bar">
-              <button class="btn btn-blue" onclick="finalizeValidation()">Simpan Validasi &amp; Jadwal Berikutnya</button>
+              <button class="btn btn-blue" onclick="finalizeValidation()">Simpan Validasi</button>
               <button class="btn btn-outline" onclick="go('sup2-validasi')">Kembali</button>
             </div>
           </div>
