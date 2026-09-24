@@ -28,6 +28,11 @@
               </div>
             </div>
 
+            <div id="vdFotoPreviewWrap" style="display:none;margin-top:14px;">
+              <div class="k" style="font-size:12px;color:var(--ink-soft);margin-bottom:8px;">Foto Pemeriksaan</div>
+              <img id="vdFotoPreview" src="" alt="Foto pemeriksaan teknisi" style="display:block;max-width:520px;width:100%;max-height:320px;object-fit:contain;border:1px solid var(--line);border-radius:8px;background:#F5F6F7;">
+            </div>
+
             <div id="vdParamMount"></div>
 
             <div class="field">
