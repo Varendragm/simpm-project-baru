@@ -1044,7 +1044,7 @@ function renderValidasiDetail(pmId){
   document.getElementById('voptReject').classList.remove('reject');
   document.getElementById('vdCatatanSupervisor').value = r.catatanSupervisor || '';
   document.getElementById('vdTeknisiBerikutnya').value = r.pemeriksa;
-  document.getElementById('vdIntervalBerikutnya').value = 'Mingguan';
+  document.getElementById('vdIntervalBerikutnya').value = 'Tidak berulang';
   document.getElementById('vdTanggalBerikutnya').value = r.jadwalBerikutnya || '';
   document.getElementById('vdDurasiBerikutnya').value = sc.estimasi || '';
 }
@@ -1520,7 +1520,11 @@ function tambahBarisSparepart(){
 }
 function hapusBarisSparepart(btn){
   const body = document.getElementById('tekSparepartBody');
-  if(body.querySelectorAll('tr').length > 1){ btn.closest('tr').remove(); }
+  if(!body || !btn) return;
+  btn.closest('tr')?.remove();
+  if(!body.querySelectorAll('tr').length){
+    body.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--ink-soft);padding:12px;">Tidak ada komponen / spare part yang digunakan.</td></tr>';
+  }
 }
 function buildReportFromForm(){
   const katEl = document.querySelector('#tekKategoriRow .vopt.on');
