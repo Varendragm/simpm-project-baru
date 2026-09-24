@@ -54,5 +54,6 @@
 <script src="{{ asset('js/teknisi-pm.js') }}"></script>
 <script src="{{ asset('js/role-guard.js') }}"></script>
 <script src="{{ asset('js/simpm-hardening.js') }}"></script>
+<script src="{{ asset('js/manager-hardening.js') }}"></script>
 </body>
 </html>
