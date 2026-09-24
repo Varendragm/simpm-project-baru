@@ -38,14 +38,16 @@ class MachineProductionRecord extends Model
                 ]);
             }
 
-            $overlap = static::query()
+            $query = static::query()
                 ->where('machine_id', $record->machine_id)
-                ->whereKeyNot($record->getKey())
                 ->whereDate('period_start', '<=', $record->period_end->toDateString())
-                ->whereDate('period_end', '>=', $record->period_start->toDateString())
-                ->exists();
+                ->whereDate('period_end', '>=', $record->period_start->toDateString());
 
-            if ($overlap) {
+            if ($record->exists) {
+                $query->where($record->getKeyName(), '!=', $record->getKey());
+            }
+
+            if ($query->exists()) {
                 throw ValidationException::withMessages([
                     'period_start' => 'Periode produksi mesin bertabrakan dengan record produksi yang sudah ada.',
                 ]);
