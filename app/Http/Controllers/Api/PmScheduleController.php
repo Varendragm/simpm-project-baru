@@ -135,6 +135,13 @@ class PmScheduleController extends Controller
         $data = $request->validate([
             'approve' => ['required', 'boolean'],
             'catatan' => ['nullable', 'string'],
+            'pekerjaanTambahan' => ['nullable', 'array'],
+            'pekerjaanTambahan.enabled' => ['nullable', 'boolean'],
+            'pekerjaanTambahan.jenis' => ['nullable', 'string', 'max:150'],
+            'pekerjaanTambahan.teknisiUserId' => ['nullable', 'integer', 'exists:users,id'],
+            'pekerjaanTambahan.tanggal' => ['nullable', 'date'],
+            'pekerjaanTambahan.estimasi' => ['nullable', 'string', 'max:30'],
+            'pekerjaanTambahan.prioritas' => ['nullable', 'string', 'in:rendah,sedang,tinggi,kritis'],
         ]);
 
         // Validasi hanya boleh dilakukan setelah Teknisi benar-benar mengirim laporan.
@@ -222,6 +229,51 @@ class PmScheduleController extends Controller
                             'prioritas' => $pmSchedule->prioritas,
                             'status' => 'terjadwal',
                             'catatan' => 'Dijadwalkan otomatis setelah validasi PM ' . $pmSchedule->id,
+                        ]);
+                    }
+                }
+
+                // Pekerjaan tambahan adalah PM satu kali yang berdiri sendiri.
+                // Pekerjaan ini tidak mengubah/mengganggu PM rutin berikutnya.
+                $additional = $data['pekerjaanTambahan'] ?? [];
+                if (($additional['enabled'] ?? false) === true) {
+                    if (empty($additional['jenis']) || empty($additional['teknisiUserId']) || empty($additional['tanggal'])) {
+                        throw new \RuntimeException('Pekerjaan tambahan harus memiliki jenis pekerjaan, teknisi, dan tanggal.');
+                    }
+
+                    $additionalTechnician = User::whereKey($additional['teknisiUserId'])
+                        ->where('role', 'teknisi')
+                        ->first();
+
+                    if (!$additionalTechnician) {
+                        throw new \RuntimeException('Teknisi untuk pekerjaan tambahan tidak valid.');
+                    }
+
+                    $additionalDate = Carbon::parse($additional['tanggal'])->toDateString();
+                    $additionalPriority = $additional['prioritas'] ?? 'sedang';
+                    $additionalJenis = trim($additional['jenis']);
+
+                    $existingAdditional = PmSchedule::query()
+                        ->where('machine_id', $pmSchedule->machine_id)
+                        ->where('jenis', $additionalJenis)
+                        ->whereDate('tanggal', $additionalDate)
+                        ->where('interval', 'Tidak berulang')
+                        ->where('teknisi_user_id', $additionalTechnician->id)
+                        ->first();
+
+                    if (!$existingAdditional) {
+                        PmSchedule::create([
+                            'id' => 'pm-' . substr((string) Str::uuid(), 0, 8),
+                            'machine_id' => $pmSchedule->machine_id,
+                            'teknisi_user_id' => $additionalTechnician->id,
+                            'jenis' => $additionalJenis,
+                            'teknisi' => $additionalTechnician->name,
+                            'tanggal' => $additionalDate,
+                            'interval' => 'Tidak berulang',
+                            'estimasi' => $additional['estimasi'] ?? $pmSchedule->estimasi,
+                            'prioritas' => $additionalPriority,
+                            'status' => 'terjadwal',
+                            'catatan' => 'Pekerjaan tambahan dari PM ' . $pmSchedule->id . '. Tidak berulang.',
                         ]);
                     }
                 }
