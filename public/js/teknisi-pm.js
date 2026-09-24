@@ -36,7 +36,8 @@
     }
     el.style.display = 'grid';
     el.style.gap = '10px';
-    el.innerHTML = reports.slice(0, 3).map(function (p) {
+    // Dashboard hanya menampilkan status laporan terakhir; riwayat lengkap tetap di menu Riwayat.
+    el.innerHTML = reports.slice(0, 1).map(function (p) {
       const m = getMachine(p.machineId);
       const rejected = p.status === 'ditolak';
       const approved = p.status === 'selesai';
