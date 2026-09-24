@@ -107,7 +107,7 @@
         const callout = document.getElementById('tekValidasiCallout');
         const actionBar = document.getElementById('tekActionBar');
         if (scope) scope.querySelectorAll('input, textarea, select').forEach(function (f) {
-          if (f.id !== 'tekFotoInput') { f.disabled = false; f.style.background = ''; }
+          f.disabled = false; f.style.background = '';
         });
         if (callout) {
           callout.style.display = 'block';
