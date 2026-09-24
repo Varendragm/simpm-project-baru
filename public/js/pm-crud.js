@@ -13,20 +13,25 @@
   }
 
   function renderTechnicianOptions() {
-    const select = document.getElementById('jtTeknisi');
-    if (!select) return;
     const technicians = Array.isArray(window.TECHNICIANS) ? window.TECHNICIANS : [];
-    const previous = select.value;
-    select.innerHTML = technicians.length
-      ? technicians.map(function (u) {
-          return '<option value="' + escapeHtml(String(u.id)) + '">' + escapeHtml(u.name) + '</option>';
-        }).join('')
-      : '<option value="">Tidak ada akun teknisi</option>';
-    if (technicians.some(function (u) { return String(u.id) === String(previous); })) {
-      select.value = previous;
-    }
+    [
+      document.getElementById('jtTeknisi'),
+      document.getElementById('vdTeknisiBerikutnya')
+    ].forEach(function(select) {
+      if (!select) return;
+      const previous = select.value;
+      select.innerHTML = technicians.length
+        ? technicians.map(function(u) {
+            return '<option value="' + escapeHtml(String(u.id)) + '">' + escapeHtml(u.name) + '</option>';
+          }).join('')
+        : '<option value="">Tidak ada akun teknisi</option>';
+      if (technicians.some(function(u){ return String(u.id) === String(previous); })) {
+        select.value = previous;
+      } else if (technicians.length) {
+        select.value = String(technicians[0].id);
+      }
+    });
   }
-
   function technicianFromForm() {
     const select = document.getElementById('jtTeknisi');
     const id = select ? select.value : '';
@@ -194,6 +199,7 @@
     apiUpload('/api/pm-schedules/' + encodeURIComponent(pmId) + '/laporan', formData)
       .then(function () { return refreshBootstrap(); })
       .then(function () {
+        if (typeof renderTeknisiDetailJadwal === 'function') renderTeknisiDetailJadwal(pmId);
         const callout = document.getElementById('tekValidasiCallout');
         if (callout) {
           callout.style.display = 'block';
@@ -246,7 +252,8 @@
       body: JSON.stringify({
         approve: approve,
         catatan: catatan,
-        teknisiBerikutnya: document.getElementById('vdTeknisiBerikutnya').value,
+        teknisiBerikutnyaUserId: document.getElementById('vdTeknisiBerikutnya').value,
+        teknisiBerikutnya: (function(){ const id=document.getElementById('vdTeknisiBerikutnya').value; const u=(window.TECHNICIANS||[]).find(function(x){return String(x.id)===String(id);}); return u ? u.name : ''; })(),
         intervalBerikutnya: document.getElementById('vdIntervalBerikutnya').value,
         tanggalBerikutnya: document.getElementById('vdTanggalBerikutnya').value,
         durasiBerikutnya: document.getElementById('vdDurasiBerikutnya').value
