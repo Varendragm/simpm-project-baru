@@ -11,12 +11,16 @@ function num(v,d){return v==null||v===''||isNaN(Number(v))?'—':Number(v).toFix
 function periodText(d){return formatTanggalID(d.periodStart)+' s/d '+formatTanggalID(d.periodEnd);}
 
 window.printSupervisorReport=function(){
-  status('Menyiapkan laporan PDF...');
-  var w=window.open('about:blank','_blank','width=1200,height=850');
-  if(!w){alert('Popup diblokir browser. Izinkan popup untuk membuat PDF.');return;}
   var q='period='+encodeURIComponent(periodValue())+'&station_id='+encodeURIComponent(stationValue())+'&machine_id='+encodeURIComponent(machineValue());
-  w.location.href='/manager/report/print?'+q;
-  setTimeout(function(){status('Laporan PDF dibuka. Pilih Cetak/Print lalu Save as PDF.');},500);
+  var url='/manager/report/print?'+q+'&_='+Date.now();
+  status('Membuka laporan PDF...');
+  var w=window.open(url,'_blank','noopener,noreferrer');
+  if(!w){
+    status('Popup diblokir browser. Izinkan popup untuk membuka laporan PDF.');
+    alert('Popup diblokir browser. Izinkan popup untuk membuat PDF.');
+    return;
+  }
+  setTimeout(function(){status('Laporan PDF sudah dibuka. Gunakan Print/Cetak lalu Save as PDF.');},700);
 };
 
 window.exportSupervisorExcel=function(){
