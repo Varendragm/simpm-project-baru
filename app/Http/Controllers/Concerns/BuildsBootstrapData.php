@@ -31,7 +31,6 @@ trait BuildsBootstrapData
             $calculatedCondition = $statusCalculator->determine($performance);
 
             $machineData = $machine->toBootstrapArray();
-            // status = master state (aktif/nonaktif); kondisi = calculated condition.
             $machineData['kondisi'] = $calculatedCondition;
             $machineData['statusReason'] = $statusCalculator->reason($performance);
 
@@ -45,10 +44,6 @@ trait BuildsBootstrapData
 
         // SIPPM is the source of truth for finalized corrective/breakdown history.
         // Read only from the separate database connection; never write back to SIPPM.
-        $machineMap = $machines->keyBy(function (array $machine) {
-            return Str::lower(trim((string) ($machine['name'] ?? '')));
-        });
-
         $sippmHistories = SippmHistory::finalHistory()
             ->orderByDesc('final_validated_at')
             ->get();
@@ -62,9 +57,9 @@ trait BuildsBootstrapData
                 ->whereIn('id', $technicianIds)
                 ->pluck('name', 'id');
 
-        $sippmMaintenanceHistory = $sippmHistories->map(function ($report) use ($machineMap, $sippmTechnicians) {
+        $sippmMaintenanceHistory = $sippmHistories->map(function ($report) use ($sippmTechnicians) {
             $machineName = trim((string) $report->machine);
-            $machine = $machineMap->get(Str::lower($machineName));
+            $stationName = trim((string) $report->station);
 
             $downtime = 0;
             if ($report->incident_date && $report->incident_time && $report->work_end_time) {
@@ -82,8 +77,12 @@ trait BuildsBootstrapData
 
             return [
                 'noLaporan' => $report->kode,
-                'machineId' => $machine['id'] ?? null,
+                // SIPPM history keeps its own machine/station identity.
+                // Do not force it through SIMPM's machine master.
+                'machineId' => null,
                 'machineName' => $machineName,
+                'stationId' => null,
+                'stationName' => $stationName,
                 'kategori' => Str::lower((string) $report->category),
                 'pekerjaan' => $report->action_taken ?: $report->description,
                 'pelaksana' => $sippmTechnicians->get($report->technician_id, 'Teknisi SIPPM'),
