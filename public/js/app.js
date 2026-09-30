@@ -1,3 +1,14 @@
+
+function toggleSidebar(){
+  document.getElementById('appShell').classList.toggle('sidebar-toggled');
+}
+document.addEventListener('click', function(e){
+  if(window.matchMedia('(max-width:760px)').matches){
+    const fb = e.target.closest('.formula-box');
+    if(fb){ fb.classList.toggle('fb-open'); }
+  }
+});
+
 /* =====================================================================
    RIWAYAT MAINTENANCE
    ===================================================================== */
@@ -25,18 +36,6 @@ function renderRiwayatTable(){
   const tbody = document.getElementById('rwTbody');
   if(!tbody) return;
   let list = MAINTENANCE_HISTORY.slice();
-  if(riwayatFilter.stationId && riwayatFilter.stationId!=='all'){
-    list = list.filter(function(h){
-      if(h.source==='sippm') return String(h.stationName||'').toLowerCase()===String(riwayatFilter.stationId).toLowerCase();
-      const m=getMachine(h.machineId); return m && m.stationId===riwayatFilter.stationId;
-    });
-  }
-  if(riwayatFilter.machineId && riwayatFilter.machineId!=='all'){
-    list = list.filter(function(h){
-      if(h.source==='sippm') return String(h.machineName||'').toLowerCase()===String(riwayatFilter.machineId).toLowerCase();
-      return h.machineId===riwayatFilter.machineId;
-    });
-  }
   if(riwayatFilter.kategori && riwayatFilter.kategori!=='all'){
     list = list.filter(function(h){ return h.kategori===riwayatFilter.kategori; });
   }
@@ -63,27 +62,3 @@ function renderRiwayatTable(){
     +'</tr>';
   }).join('') : '<tr><td colspan="9" class="empty-state">Tidak ada riwayat yang sesuai dengan filter.</td></tr>';
 }
-
-/* =====================================================================
-   LAPORAN & GRAFIK
-   ===================================================================== */
-let laporanFilter = {stationId:'all', machineId:'all'};
-function renderLaporanFilters(){
-  const stSel = document.getElementById('lapStasiunSel');
-  const mSel = document.getElementById('lapMesinSel');
-  if(!stSel || !mSel) return;
-  stSel.innerHTML = stationOptionsHTML(true, laporanFilter.stationId);
-  mSel.innerHTML = machineOptionsHTML(laporanFilter.stationId, true, laporanFilter.machineId);
-}
-function onLaporanStationChange(sel){
-  laporanFilter.stationId = sel.value;
-  laporanFilter.machineId = 'all';
-  renderLaporanFilters();
-  renderLaporan();
-}
-function onLaporanFilterChange(){
-  laporanFilter.machineId = document.getElementById('lapMesinSel').value;
-  renderLaporan();
-}
-function filteredLaporanMachines(){
-  let list = MACHINES;
