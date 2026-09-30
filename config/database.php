@@ -36,6 +36,26 @@ return [
             ]) : [],
         ],
 
+        'sippm' => [
+            'driver' => 'mysql',
+            'url' => env('SIPPM_DB_URL'),
+            'host' => env('SIPPM_DB_HOST', '127.0.0.1'),
+            'port' => env('SIPPM_DB_PORT', '3306'),
+            'database' => env('SIPPM_DB_DATABASE', 'sippm_pgrendeng'),
+            'username' => env('SIPPM_DB_USERNAME', 'root'),
+            'password' => env('SIPPM_DB_PASSWORD', ''),
+            'unix_socket' => env('SIPPM_DB_SOCKET', ''),
+            'charset' => env('SIPPM_DB_CHARSET', 'utf8mb4'),
+            'collation' => env('SIPPM_DB_COLLATION', 'utf8mb4_unicode_ci'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+            'options' => extension_loaded('pdo_mysql') ? array_filter([
+                PDO::MYSQL_ATTR_SSL_CA => env('SIPPM_MYSQL_ATTR_SSL_CA'),
+            ]) : [],
+        ],
+
         'pgsql' => [
             'driver' => 'pgsql',
             'url' => env('DB_URL'),
