@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Machine;
+use App\Models\MachineProductionRecord;
+use App\Models\MaintenanceHistory;
 use App\Services\PerformanceCalculator;
 use Illuminate\Http\Request;
 
@@ -26,7 +28,14 @@ class ManagerReportController extends Controller
             $period = 'month';
         }
 
-        $reference = now();
+        // The UI labels the month option as "Bulan data terbaru".
+        // Do not anchor reports to today's month when the latest production
+        // data is from an earlier month; that makes PDF/Excel exports appear
+        // empty even though the application has valid production records.
+        $latestProductionDate = MachineProductionRecord::query()->max('period_end');
+        $latestMaintenanceDate = MaintenanceHistory::query()->max('tanggal');
+        $latestDataDate = $latestProductionDate ?: $latestMaintenanceDate;
+        $reference = $latestDataDate ? \Carbon\Carbon::parse($latestDataDate) : now();
         $start = match ($period) {
             'year' => $reference->copy()->startOfYear(),
             'quarter' => $reference->copy()->firstOfQuarter(),
